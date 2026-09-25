@@ -172,7 +172,7 @@ export const CommitWorkoutParser: React.FC<{ onWorkoutLogged?: () => void; onOpe
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-white">
                 <Sparkles className="w-4 h-4 text-white" />
-                <span>AI Pro Workout Generator (Meta AI / LLM)</span>
+                <span>AI Olympic Workout Generator (Edge Neural Engine)</span>
               </div>
               <button
                 onClick={onOpenApiKeyModal}

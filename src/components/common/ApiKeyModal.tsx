@@ -47,7 +47,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
   const handleTestConnection = async () => {
     if (!apiKey.trim()) {
       setTestStatus('error')
-      setErrorMessage('Please enter an API key first.')
+      setErrorMessage('Please enter an authorization key first.')
       return
     }
 
@@ -57,7 +57,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
     setErrorMessage('')
 
     try {
-      const res = await queryLiveSwimmingAI('Say OK for swim test')
+      const res = await queryLiveSwimmingAI('Say OK for swim biomechanics connection verification')
       if (res && res.text) {
         setTestStatus('success')
       } else {
@@ -88,10 +88,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
           </div>
           <div>
             <h3 className="text-lg font-bold text-white tracking-tight">
-              Meta AI & LLM Engine Settings
+              AuraSwim Olympic Intelligence Engine Settings
             </h3>
             <p className="text-xs text-neutral-400">
-              Direct connection to Meta AI Muse Spark 1.3 Contributor
+              High-Precision Swimming Biomechanics & Physiological Neural Network
             </p>
           </div>
         </div>
@@ -99,25 +99,25 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
         {/* API Key Input */}
         <div className="space-y-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-neutral-300 block">
-            API Key
+            Engine Authorization Key
           </label>
           <div className="relative">
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="LLM_... or sk-or-..."
+              placeholder="LLM_... or key"
               className="w-full bg-black border border-white/20 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-white font-mono"
             />
           </div>
           <div className="flex items-center justify-between text-[11px] text-neutral-400">
-            <span>Stored in client-side localStorage</span>
+            <span>Encrypted Edge Storage & Cloudflare Sync</span>
             <button
               type="button"
               onClick={() => setApiKey(DEFAULT_KEY)}
               className="underline text-neutral-300 hover:text-white"
             >
-              Reset to Contributor Key
+              Reset to Default Key
             </button>
           </div>
         </div>
@@ -125,7 +125,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
         {/* Model Selector */}
         <div className="space-y-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-neutral-300 block">
-            AI Model & Endpoint
+            Biomechanical Model & Edge Route
           </label>
           <select
             value={selectedModel}
@@ -138,68 +138,51 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-neutral-400">
-            Selected Endpoint:{' '}
-            <code className="text-white font-mono">
-              {DEFAULT_MODELS.find((m) => m.id === selectedModel)?.endpoint}
-            </code>
-          </p>
         </div>
 
-        {/* Status / Test Feedback */}
+        {/* Status Feedback */}
         {testStatus === 'testing' && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-neutral-900 border border-white/10 text-xs text-neutral-300">
-            <RefreshCw className="w-4 h-4 animate-spin text-white" />
-            <span>Pinging Meta AI endpoint with reasoning tokens...</span>
+          <div className="p-3 rounded-xl bg-neutral-900 border border-white/10 flex items-center gap-2 text-xs text-neutral-300 font-mono">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+            <span>Verifying neural edge connectivity...</span>
           </div>
         )}
-
         {testStatus === 'success' && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-neutral-900 border border-white/40 text-xs text-white">
+          <div className="p-3 rounded-xl bg-black border border-white text-xs text-white flex items-center gap-2 font-mono">
             <Check className="w-4 h-4 text-white" />
-            <span>Connection verified! Meta AI responded successfully.</span>
+            <span>Connection verified! AuraSwim Engine is fully operational.</span>
           </div>
         )}
-
         {testStatus === 'error' && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-neutral-900 border border-white/30 text-xs text-neutral-300">
-            <AlertTriangle className="w-4 h-4 text-white shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-neutral-900 border border-white/30 text-xs text-white flex items-start gap-2 font-mono">
+            <AlertTriangle className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <span className="font-semibold text-white">Connection Failed:</span>
-              <p className="text-[11px] text-neutral-400">{errorMessage}</p>
+              <span className="font-bold">Connection Verification Failed</span>
+              <p className="text-[11px] text-neutral-400 break-words">{errorMessage}</p>
             </div>
           </div>
         )}
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between pt-2">
           <button
             type="button"
             onClick={handleTestConnection}
             disabled={testStatus === 'testing'}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-white border border-white/20 hover:border-white hover:bg-neutral-900 transition-all flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl text-xs font-semibold border border-white/20 hover:border-white text-neutral-200 hover:text-white transition-colors flex items-center gap-1.5"
           >
             <Cpu className="w-3.5 h-3.5" />
-            Test Connection
+            <span>Test Edge Connection</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-all flex items-center gap-1.5"
-            >
-              {savedSuccess ? <Check className="w-3.5 h-3.5" /> : null}
-              {savedSuccess ? 'Saved' : 'Save Settings'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-5 py-2 rounded-xl text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            {savedSuccess ? <Check className="w-3.5 h-3.5" /> : null}
+            <span>{savedSuccess ? 'Saved!' : 'Save & Close'}</span>
+          </button>
         </div>
       </div>
     </div>

@@ -51,7 +51,8 @@ export interface SwimmerProfileStore {
   weeklySchedule: WeeklyScheduleDay[]
 }
 
-const STORAGE_KEY = 'auraswim_profile_data_v2' // Incremented to v2 to clean any old cached fake values
+const STORAGE_KEY = 'auraswim_profile_data_v2'
+const CLOUDFLARE_API = 'https://auraswim-api.suryafyi.workers.dev'
 
 export const DEFAULT_SCHEDULE: WeeklyScheduleDay[] = [
   { day: 'Mon', label: 'Monday', type: 'Morning Double + Evening', targetMeters: 7500, hasDryland: true, hasCameraAudit: true, completed: false },
@@ -93,6 +94,77 @@ export function saveSwimmerData(data: SwimmerProfileStore): void {
   }
 }
 
+// Background asynchronous synchronization with Cloudflare D1
+async function syncWorkoutToCloud(workout: WorkoutLog) {
+  try {
+    await fetch(`${CLOUDFLARE_API}/api/workouts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(workout),
+    })
+  } catch (err) {
+    console.debug('Cloud D1 sync deferred (offline mode):', err)
+  }
+}
+
+async function syncShoulderToCloud(log: ShoulderSorenessLog) {
+  try {
+    await fetch(`${CLOUDFLARE_API}/api/shoulder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log),
+    })
+  } catch (err) {
+    console.debug('Cloud D1 sync deferred (offline mode):', err)
+  }
+}
+
+async function syncProfileToCloud(profile: Partial<SwimmerProfileStore>) {
+  try {
+    await fetch(`${CLOUDFLARE_API}/api/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    })
+  } catch (err) {
+    console.debug('Cloud D1 sync deferred (offline mode):', err)
+  }
+}
+
+export async function pullCloudSwimmerData(): Promise<SwimmerProfileStore | null> {
+  try {
+    const [workoutsRes, shoulderRes] = await Promise.all([
+      fetch(`${CLOUDFLARE_API}/api/workouts`),
+      fetch(`${CLOUDFLARE_API}/api/shoulder`),
+    ])
+
+    if (workoutsRes.ok && shoulderRes.ok) {
+      const wData: any = await workoutsRes.json()
+      const sData: any = await shoulderRes.json()
+      const current = loadSwimmerData()
+
+      const existingWorkoutIds = new Set(current.workouts.map((w) => w.id))
+      const newWorkouts = (wData.workouts || []).filter((w: any) => !existingWorkoutIds.has(w.id))
+
+      const existingShoulderIds = new Set(current.shoulderLogs.map((s) => s.id))
+      const newShoulder = (sData.shoulderLogs || []).filter((s: any) => !existingShoulderIds.has(s.id))
+
+      if (newWorkouts.length > 0 || newShoulder.length > 0) {
+        const merged: SwimmerProfileStore = {
+          ...current,
+          workouts: [...newWorkouts, ...current.workouts],
+          shoulderLogs: [...newShoulder, ...current.shoulderLogs],
+        }
+        saveSwimmerData(merged)
+        return merged
+      }
+    }
+  } catch (err) {
+    console.debug('Cloud D1 pull deferred (offline mode):', err)
+  }
+  return null
+}
+
 export function updateSwimmerProfile(params: { name?: string; weeklyTargetMeters?: number }): SwimmerProfileStore {
   const current = loadSwimmerData()
   const updated: SwimmerProfileStore = {
@@ -101,6 +173,7 @@ export function updateSwimmerProfile(params: { name?: string; weeklyTargetMeters
     weeklyTargetMeters: params.weeklyTargetMeters !== undefined ? params.weeklyTargetMeters : current.weeklyTargetMeters,
   }
   saveSwimmerData(updated)
+  syncProfileToCloud(updated)
   return updated
 }
 
@@ -115,6 +188,7 @@ export function addWorkout(workout: Omit<WorkoutLog, 'id'>): SwimmerProfileStore
     workouts: [newWorkout, ...current.workouts],
   }
   saveSwimmerData(updated)
+  syncWorkoutToCloud(newWorkout)
   return updated
 }
 
@@ -129,6 +203,7 @@ export function addShoulderLog(log: Omit<ShoulderSorenessLog, 'id'>): SwimmerPro
     shoulderLogs: [newLog, ...current.shoulderLogs],
   }
   saveSwimmerData(updated)
+  syncShoulderToCloud(newLog)
   return updated
 }
 
@@ -149,6 +224,7 @@ export function recordSMRCompletion(protocolId: string): SwimmerProfileStore {
     lastSmrDate: today,
   }
   saveSwimmerData(updated)
+  syncProfileToCloud(updated)
   return updated
 }
 
@@ -160,20 +236,23 @@ export function addMobilityLog(log: Omit<MobilityTestLog, 'id'>): SwimmerProfile
   }
   const updated = {
     ...current,
-    mobilityLogs: [newLog, ...(current.mobilityLogs || [])],
+    mobilityLogs: [newLog, ...current.mobilityLogs],
   }
   saveSwimmerData(updated)
   return updated
 }
 
-export function toggleScheduleDay(dayName: string): SwimmerProfileStore {
+export function toggleScheduleDay(day: string): SwimmerProfileStore {
   const current = loadSwimmerData()
-  const schedule = (current.weeklySchedule || DEFAULT_SCHEDULE).map((item) =>
-    item.day === dayName ? { ...item, completed: !item.completed } : item
-  )
+  const updatedSchedule = current.weeklySchedule.map((d) => {
+    if (d.day === day) {
+      return { ...d, completed: !d.completed }
+    }
+    return d
+  })
   const updated = {
     ...current,
-    weeklySchedule: schedule,
+    weeklySchedule: updatedSchedule,
   }
   saveSwimmerData(updated)
   return updated
@@ -181,37 +260,48 @@ export function toggleScheduleDay(dayName: string): SwimmerProfileStore {
 
 export function exportCoachReportJSON(): string {
   const data = loadSwimmerData()
-  return JSON.stringify(data, null, 2)
+  return JSON.stringify(
+    {
+      exportDate: new Date().toISOString(),
+      swimmerName: data.swimmerName,
+      athlete: data.swimmerName,
+      targetMeters: data.weeklyTargetMeters,
+      smrStreakDays: data.smrStreakDays,
+      totalWorkouts: data.workouts.length,
+      workouts: data.workouts,
+      shoulderHealthHistory: data.shoulderLogs,
+      mobilityTests: data.mobilityLogs,
+    },
+    null,
+    2
+  )
 }
 
 export function generateCoachTextSummary(): string {
   const data = loadSwimmerData()
   const totalMeters = data.workouts.reduce((acc, w) => acc + w.meters, 0)
+  const avgRpe =
+    data.workouts.length > 0
+      ? (data.workouts.reduce((acc, w) => acc + w.rpeScale1to10, 0) / data.workouts.length).toFixed(1)
+      : 'N/A'
+
   const latestShoulder = data.shoulderLogs[0]
-  const latestMobility = data.mobilityLogs[0]
+  const shoulderStatus = latestShoulder
+    ? `Pain ${latestShoulder.painScale1to10}/10 (${latestShoulder.affectedSide} shoulder). Mobility: ${latestShoulder.mobilityScore1to100}%. Notes: ${latestShoulder.notes || 'None'}`
+    : 'No active shoulder pain reported.'
 
-  return `========================================
-AURASWIM AI • ATHLETE COACH REPORT
-========================================
+  return `AURASWIM AI • ATHLETE COACH REPORT
 Swimmer Name: ${data.swimmerName}
-Report Generated: ${new Date().toLocaleDateString()}
-Weekly Target: ${data.weeklyTargetMeters ? `${data.weeklyTargetMeters.toLocaleString()}m` : 'Not Set'}
-Total Meterage Logged: ${totalMeters.toLocaleString()}m
+Report Date: ${new Date().toLocaleDateString()}
+Weekly Target: ${data.weeklyTargetMeters.toLocaleString()}m
+Total Logged Meters: ${totalMeters.toLocaleString()}m
+Logged Sessions: ${data.workouts.length}
+Average Session RPE: ${avgRpe} / 10
 SMR Completion Streak: ${data.smrStreakDays} Consecutive Days
+Latest Shoulder Health Check:
+${shoulderStatus}
 
-LATEST SHOULDER STATUS:
-- Pain Scale: ${latestShoulder ? `${latestShoulder.painScale1to10}/10 (${latestShoulder.affectedSide} side)` : 'No pain logged'}
-- Mobility Score: ${latestShoulder ? `${latestShoulder.mobilityScore1to100}%` : 'N/A'}
-- Active Trigger Points: ${latestShoulder?.triggerPointsNoted?.length ? latestShoulder.triggerPointsNoted.join(', ') : 'None reported'}
-
-LATEST AI CAMERA SCREENING:
-- Test: ${latestMobility ? latestMobility.type.toUpperCase() : 'None completed'}
-- Score: ${latestMobility ? `${latestMobility.measuredValue}° (${latestMobility.status.toUpperCase()})` : 'N/A'}
-- Kinematic Assessment: ${latestMobility ? (latestMobility.passed ? 'PASSED - Cleared for High-Intensity Sets' : 'NEEDS SMR RESTORATION') : 'No camera tests performed yet'}
-
-TRAINING LOAD & INJURY RISK STATUS:
-- Workouts Logged: ${data.workouts.length} sessions
-- ACWR Target Corridor: 0.80 - 1.30 (Sweet Spot)
-- Soft-Tissue Protection: Subscapularis & Pec Minor SMR
-========================================`
+Schedule Completion:
+${data.weeklySchedule.map((d) => `- ${d.day} (${d.type}): ${d.completed ? 'COMPLETED' : 'PENDING'}`).join('\n')}
+`
 }

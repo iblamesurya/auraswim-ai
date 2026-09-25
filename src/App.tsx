@@ -8,7 +8,7 @@ import { TrainingScheduler } from './components/dashboard/TrainingScheduler'
 import { InjuryRiskGauge } from './components/dashboard/InjuryRiskGauge'
 import { MetricsTracker } from './components/dashboard/MetricsTracker'
 import { SwimmerJournal } from './components/dashboard/SwimmerJournal'
-import { loadSwimmerData, recordSMRCompletion, updateSwimmerProfile } from './lib/storage/swimmerStore'
+import { loadSwimmerData, recordSMRCompletion, updateSwimmerProfile, pullCloudSwimmerData } from './lib/storage/swimmerStore'
 import { calculateFromDailyLoads } from './lib/biomechanics/acwrModel'
 import type { SMRProtocol } from './lib/data/smrProtocols'
 import {
@@ -57,6 +57,15 @@ export function App() {
     setStoreData(data)
     setEditName(data.swimmerName)
     setEditTarget(data.weeklyTargetMeters)
+
+    // Pull any remote Cloudflare D1 updates in background
+    pullCloudSwimmerData().then((merged) => {
+      if (merged) {
+        setStoreData(merged)
+        setEditName(merged.swimmerName)
+        setEditTarget(merged.weeklyTargetMeters)
+      }
+    })
   }, [activeTab])
 
   // Real calculations without fake hardcoded values
