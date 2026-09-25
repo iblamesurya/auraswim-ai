@@ -1,19 +1,13 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { Header } from './components/common/Header'
 import { MobileNav } from './components/common/MobileNav'
 import { ApiKeyModal } from './components/common/ApiKeyModal'
-import { PoseCamera } from './components/camera/PoseCamera'
 import { SMRRoutineGuide } from './components/smr/SMRRoutineGuide'
 import { FasciaBodyMap } from './components/smr/FasciaBodyMap'
 import { TrainingScheduler } from './components/dashboard/TrainingScheduler'
 import { InjuryRiskGauge } from './components/dashboard/InjuryRiskGauge'
 import { MetricsTracker } from './components/dashboard/MetricsTracker'
 import { SwimmerJournal } from './components/dashboard/SwimmerJournal'
-import { ResearchSourcesExplorer } from './components/research/ResearchSourcesExplorer'
-import { AICoachChat } from './components/ai-coach/AICoachChat'
-import { DartfishVideoStudio } from './components/pro/DartfishVideoStudio'
-import { CommitWorkoutParser } from './components/pro/CommitWorkoutParser'
-import { TritonRacePacer } from './components/pro/TritonRacePacer'
 import { loadSwimmerData, recordSMRCompletion, updateSwimmerProfile } from './lib/storage/swimmerStore'
 import { calculateFromDailyLoads } from './lib/biomechanics/acwrModel'
 import type { SMRProtocol } from './lib/data/smrProtocols'
@@ -30,6 +24,23 @@ import {
   Check,
   X,
 } from 'lucide-react'
+
+// Code-split heavy pro-suite, vision, and research components for mobile deckside performance
+const PoseCamera = lazy(() => import('./components/camera/PoseCamera').then((m) => ({ default: m.PoseCamera })))
+const DartfishVideoStudio = lazy(() => import('./components/pro/DartfishVideoStudio').then((m) => ({ default: m.DartfishVideoStudio })))
+const CommitWorkoutParser = lazy(() => import('./components/pro/CommitWorkoutParser').then((m) => ({ default: m.CommitWorkoutParser })))
+const TritonRacePacer = lazy(() => import('./components/pro/TritonRacePacer').then((m) => ({ default: m.TritonRacePacer })))
+const ResearchSourcesExplorer = lazy(() => import('./components/research/ResearchSourcesExplorer').then((m) => ({ default: m.ResearchSourcesExplorer })))
+const AICoachChat = lazy(() => import('./components/ai-coach/AICoachChat').then((m) => ({ default: m.AICoachChat })))
+
+const MonochromeLoadingSkeleton = () => (
+  <div className="p-12 rounded-2xl bg-neutral-950 border border-white/10 flex flex-col items-center justify-center space-y-3 min-h-[320px] animate-pulse">
+    <div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" />
+    <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
+      Initializing AuraSwim Engine...
+    </span>
+  </div>
+)
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('schedule')
@@ -232,7 +243,9 @@ export function App() {
                 Client-side MoveNet pose estimation measuring overhead streamline flexion, early vertical forearm (EVF) catch angles, and pull asymmetry live through your camera.
               </p>
             </div>
-            <PoseCamera />
+            <Suspense fallback={<MonochromeLoadingSkeleton />}>
+              <PoseCamera />
+            </Suspense>
           </section>
         )}
 
@@ -276,15 +289,17 @@ export function App() {
               </button>
             </div>
 
-            {/* Sub-Views */}
-            {proSubView === 'dartfish' && <DartfishVideoStudio />}
-            {proSubView === 'commit' && (
-              <CommitWorkoutParser
-                onWorkoutLogged={() => setStoreData(loadSwimmerData())}
-                onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-              />
-            )}
-            {proSubView === 'triton' && <TritonRacePacer />}
+            {/* Sub-Views with Suspense */}
+            <Suspense fallback={<MonochromeLoadingSkeleton />}>
+              {proSubView === 'dartfish' && <DartfishVideoStudio />}
+              {proSubView === 'commit' && (
+                <CommitWorkoutParser
+                  onWorkoutLogged={() => setStoreData(loadSwimmerData())}
+                  onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+                />
+              )}
+              {proSubView === 'triton' && <TritonRacePacer />}
+            </Suspense>
           </section>
         )}
 
@@ -334,10 +349,18 @@ export function App() {
         {activeTab === 'journal' && <SwimmerJournal />}
 
         {/* Tab 7: 100 Research Sources Directory */}
-        {activeTab === 'sources' && <ResearchSourcesExplorer />}
+        {activeTab === 'sources' && (
+          <Suspense fallback={<MonochromeLoadingSkeleton />}>
+            <ResearchSourcesExplorer />
+          </Suspense>
+        )}
 
         {/* Tab 8: AI Swimmer Intelligence Query Hub */}
-        {activeTab === 'ai-coach' && <AICoachChat />}
+        {activeTab === 'ai-coach' && (
+          <Suspense fallback={<MonochromeLoadingSkeleton />}>
+            <AICoachChat />
+          </Suspense>
+        )}
       </main>
 
       {/* Footer */}

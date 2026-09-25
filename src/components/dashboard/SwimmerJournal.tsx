@@ -13,18 +13,18 @@ export const SwimmerJournal: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'workouts' | 'shoulder' | 'export'>('workouts')
   const [copied, setCopied] = useState(false)
 
-  // Form states for new workout
-  const [meters, setMeters] = useState(5000)
-  const [durationMin, setDurationMin] = useState(90)
-  const [rpe, setRpe] = useState(7)
-  const [strokeRate, setStrokeRate] = useState(44)
-  const [dps, setDps] = useState(1.9)
+  // Clean form states for new workout (no fake pre-populated values)
+  const [meters, setMeters] = useState<number | ''>('')
+  const [durationMin, setDurationMin] = useState<number | ''>('')
+  const [rpe, setRpe] = useState<number | ''>('')
+  const [strokeRate, setStrokeRate] = useState<number | ''>('')
+  const [dps, setDps] = useState<number | ''>('')
   const [workoutNotes, setWorkoutNotes] = useState('')
 
-  // Form states for new shoulder check
-  const [painLevel, setPainLevel] = useState(0)
+  // Clean form states for new shoulder check
+  const [painLevel, setPainLevel] = useState<number>(0)
   const [affectedSide, setAffectedSide] = useState<'none' | 'left' | 'right' | 'both'>('none')
-  const [mobilityScore, setMobilityScore] = useState(90)
+  const [mobilityScore, setMobilityScore] = useState<number>(100)
   const [shoulderNotes, setShoulderNotes] = useState('')
 
   useEffect(() => {
@@ -33,16 +33,24 @@ export const SwimmerJournal: React.FC = () => {
 
   const handleSaveWorkout = (e: React.FormEvent) => {
     e.preventDefault()
+    const parsedMeters = Number(meters)
+    if (!parsedMeters || parsedMeters <= 0) return
+
     const updated = addWorkout({
       date: new Date().toISOString().split('T')[0],
-      meters: Number(meters),
-      durationMin: Number(durationMin),
-      rpeScale1to10: Number(rpe),
-      strokeRateSpm: Number(strokeRate),
-      dpsMeters: Number(dps),
-      notes: workoutNotes || 'Standard team practice',
+      meters: parsedMeters,
+      durationMin: Number(durationMin) || 60,
+      rpeScale1to10: Number(rpe) || 5,
+      strokeRateSpm: strokeRate !== '' ? Number(strokeRate) : undefined,
+      dpsMeters: dps !== '' ? Number(dps) : undefined,
+      notes: workoutNotes.trim() ? workoutNotes.trim() : undefined,
     })
     setStore(updated)
+    setMeters('')
+    setDurationMin('')
+    setRpe('')
+    setStrokeRate('')
+    setDps('')
     setWorkoutNotes('')
   }
 
@@ -54,9 +62,12 @@ export const SwimmerJournal: React.FC = () => {
       affectedSide,
       triggerPointsNoted: painLevel > 2 ? ['Pec Minor', 'Subscapularis'] : [],
       mobilityScore1to100: Number(mobilityScore),
-      notes: shoulderNotes || 'Routine shoulder check-in',
+      notes: shoulderNotes.trim() ? shoulderNotes.trim() : undefined,
     })
     setStore(updated)
+    setPainLevel(0)
+    setAffectedSide('none')
+    setMobilityScore(100)
     setShoulderNotes('')
   }
 
@@ -153,10 +164,12 @@ export const SwimmerJournal: React.FC = () => {
               <label className="text-xs text-neutral-400 block mb-1">Volume (Meters):</label>
               <input
                 type="number"
-                step="100"
+                step="50"
+                min="50"
                 value={meters}
-                onChange={(e) => setMeters(Number(e.target.value))}
-                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-white"
+                onChange={(e) => setMeters(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="e.g. 5000"
+                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-white placeholder-neutral-600"
                 required
               />
             </div>
@@ -166,9 +179,11 @@ export const SwimmerJournal: React.FC = () => {
                 <label className="text-xs text-neutral-400 block mb-1">Duration (Min):</label>
                 <input
                   type="number"
+                  min="1"
                   value={durationMin}
-                  onChange={(e) => setDurationMin(Number(e.target.value))}
-                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white"
+                  onChange={(e) => setDurationMin(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="e.g. 90"
+                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white placeholder-neutral-600"
                   required
                 />
               </div>
@@ -179,8 +194,9 @@ export const SwimmerJournal: React.FC = () => {
                   min="1"
                   max="10"
                   value={rpe}
-                  onChange={(e) => setRpe(Number(e.target.value))}
-                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white"
+                  onChange={(e) => setRpe(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="1 - 10"
+                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white placeholder-neutral-600"
                   required
                 />
               </div>
@@ -191,9 +207,12 @@ export const SwimmerJournal: React.FC = () => {
                 <label className="text-xs text-neutral-400 block mb-1">Stroke Rate (spm):</label>
                 <input
                   type="number"
+                  min="20"
+                  max="70"
                   value={strokeRate}
-                  onChange={(e) => setStrokeRate(Number(e.target.value))}
-                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white"
+                  onChange={(e) => setStrokeRate(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="e.g. 44 (optional)"
+                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white placeholder-neutral-600"
                 />
               </div>
               <div>
@@ -201,9 +220,12 @@ export const SwimmerJournal: React.FC = () => {
                 <input
                   type="number"
                   step="0.05"
+                  min="0.5"
+                  max="3.0"
                   value={dps}
-                  onChange={(e) => setDps(Number(e.target.value))}
-                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white"
+                  onChange={(e) => setDps(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="e.g. 1.90 (optional)"
+                  className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white placeholder-neutral-600"
                 />
               </div>
             </div>
@@ -214,7 +236,7 @@ export const SwimmerJournal: React.FC = () => {
                 value={workoutNotes}
                 onChange={(e) => setWorkoutNotes(e.target.value)}
                 placeholder="e.g., 10x100m threshold free on 1:20, kept high elbow catch."
-                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-xs text-white resize-none h-16 focus:outline-none focus:border-white"
+                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-xs text-white resize-none h-16 focus:outline-none focus:border-white placeholder-neutral-600"
               />
             </div>
 
@@ -345,7 +367,7 @@ export const SwimmerJournal: React.FC = () => {
                 value={shoulderNotes}
                 onChange={(e) => setShoulderNotes(e.target.value)}
                 placeholder="e.g., Felt tight in pec minor during butterfly sprint."
-                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-xs text-white resize-none h-16 focus:outline-none focus:border-white"
+                className="w-full bg-black border border-white/20 rounded-xl px-3 py-2 text-xs text-white resize-none h-16 focus:outline-none focus:border-white placeholder-neutral-600"
               />
             </div>
 
@@ -379,13 +401,30 @@ export const SwimmerJournal: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs font-mono">
                       <span className="text-neutral-400">{s.date}</span>
-                      <span className="px-2 py-0.5 rounded bg-black border border-white/15 text-white">
-                        Pain: {s.painScale1to10}/10 • {s.affectedSide.toUpperCase()}
+                      <span className={`px-2 py-0.5 rounded border text-xs font-bold ${
+                        s.painScale1to10 >= 4
+                          ? 'bg-white text-black border-white'
+                          : 'bg-black text-white border-white/20'
+                      }`}>
+                        PAIN {s.painScale1to10}/10 ({s.affectedSide.toUpperCase()})
                       </span>
                     </div>
-                    <div className="text-xs text-neutral-300">
-                      Mobility Score: <strong className="text-white font-mono">{s.mobilityScore1to100}%</strong>
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-neutral-400">Mobility Assessment:</span>
+                      <span className="text-white font-bold">{s.mobilityScore1to100}%</span>
                     </div>
+                    {s.triggerPointsNoted?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {s.triggerPointsNoted.map((tp) => (
+                          <span
+                            key={tp}
+                            className="text-[10px] font-mono px-2 py-0.5 rounded bg-black border border-white/15 text-white"
+                          >
+                            {tp}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {s.notes && (
                       <p className="text-xs text-neutral-300 italic pt-1 border-t border-white/5">
                         "{s.notes}"
@@ -401,23 +440,26 @@ export const SwimmerJournal: React.FC = () => {
 
       {/* Export View */}
       {activeSubTab === 'export' && (
-        <div className="p-6 rounded-2xl bg-neutral-950 border border-white/15 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-neutral-950 border border-white/15 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <h3 className="text-sm font-bold text-white tracking-tight">Athlete JSON Export</h3>
-              <p className="text-xs text-neutral-400">
-                Complete raw telemetry file for coaches, physiotherapists, or database backup.
+              <h3 className="text-base font-bold text-white tracking-tight">
+                Export Athlete Biometrics to Coach
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Generate clean, structured JSON or text summaries of her yardage, ACWR load, and shoulder soreness history.
               </p>
             </div>
             <button
               onClick={handleCopyReport}
-              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="flex items-center gap-1.5 bg-white hover:bg-neutral-200 text-black px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied JSON!' : 'Copy JSON'}</span>
+              <span>{copied ? 'Copied to Clipboard' : 'Copy JSON Report'}</span>
             </button>
           </div>
-          <pre className="p-4 rounded-xl bg-black border border-white/10 text-xs font-mono text-neutral-300 overflow-x-auto max-h-80 leading-relaxed">
+
+          <pre className="bg-black border border-white/10 rounded-xl p-4 text-[11px] font-mono text-neutral-300 overflow-x-auto max-h-[350px]">
             {exportCoachReportJSON()}
           </pre>
         </div>

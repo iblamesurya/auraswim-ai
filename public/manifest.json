@@ -1,6 +1,6 @@
 {
   "short_name": "AuraSwim",
-  "name": "AuraSwim AI - Competitive Swimmer Biomechanics & SMR",
+  "name": "AuraSwim AI - Olympic Swimmer Biomechanics & SMR",
   "icons": [
     {
       "src": "favicon.svg",
@@ -9,8 +9,8 @@
     }
   ],
   "start_url": "./",
-  "background_color": "#080c14",
-  "theme_color": "#06b6d4",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "display": "standalone",
   "orientation": "portrait"
 }

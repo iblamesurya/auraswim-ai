@@ -129,15 +129,26 @@ export const MetricsTracker: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex justify-between text-xs text-neutral-400 mb-1">
+            <div className="flex justify-between items-center text-xs text-neutral-400 mb-1">
               <span>Split Time:</span>
-              <span className="text-white font-bold">{timeSec}s</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="10"
+                  max="120"
+                  value={timeSec}
+                  onChange={(e) => setTimeSec(Math.max(1, Number(e.target.value)))}
+                  className="w-16 bg-black border border-white/20 rounded px-1.5 py-0.5 text-right text-xs text-white font-bold font-mono focus:outline-none focus:border-white"
+                />
+                <span className="text-neutral-400">s</span>
+              </div>
             </div>
             <input
               type="range"
               min="20"
               max="90"
-              step="0.5"
+              step="0.1"
               value={timeSec}
               onChange={(e) => setTimeSec(Number(e.target.value))}
               className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
@@ -145,9 +156,19 @@ export const MetricsTracker: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex justify-between text-xs text-neutral-400 mb-1">
+            <div className="flex justify-between items-center text-xs text-neutral-400 mb-1">
               <span>Stroke Count:</span>
-              <span className="text-white font-bold">{strokes}</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  value={strokes}
+                  onChange={(e) => setStrokes(Math.max(1, Number(e.target.value)))}
+                  className="w-14 bg-black border border-white/20 rounded px-1.5 py-0.5 text-right text-xs text-white font-bold font-mono focus:outline-none focus:border-white"
+                />
+                <span className="text-neutral-400">str</span>
+              </div>
             </div>
             <input
               type="range"
@@ -160,22 +181,22 @@ export const MetricsTracker: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex justify-between text-xs text-neutral-400 mb-1">
-              <span>Breakout Glide (m):</span>
+            <div className="flex justify-between items-center text-xs text-neutral-400 mb-1">
+              <span>Breakout Glide:</span>
               <span className="text-white font-bold">{underwaterBreakout}m</span>
             </div>
             <input
               type="range"
               min="0"
               max="15"
-              step="1"
+              step="0.5"
               value={underwaterBreakout}
               onChange={(e) => setUnderwaterBreakout(Number(e.target.value))}
               className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
             />
             <div className="flex justify-between text-[9px] text-neutral-500">
-              <span>0m</span>
-              <span>15m (FINA limit)</span>
+              <span>0m surface</span>
+              <span>15m FINA max</span>
             </div>
           </div>
         </div>
@@ -219,58 +240,65 @@ export const MetricsTracker: React.FC = () => {
           </div>
         </div>
 
-        {/* Target Slider */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-neutral-400 font-mono">
-            <span>Target Race Time:</span>
-            <span className="text-white font-bold text-sm">
-              {targetTime.toFixed(1)}s
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Target Time Goal
+            </span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                step="0.1"
+                min="20"
+                max="600"
+                value={targetTime}
+                onChange={(e) => setTargetTime(Math.max(1, Number(e.target.value)))}
+                className="w-24 bg-neutral-900 border border-white/20 rounded px-2 py-1 text-lg font-bold text-white font-mono focus:outline-none focus:border-white"
+              />
+              <span className="text-sm text-neutral-400 font-mono">seconds</span>
+            </div>
+            <span className="text-[10px] text-neutral-500 font-mono block">
+              Event: {event} Freestyle
             </span>
           </div>
-          <input
-            type="range"
-            min={event === '50m' ? 21 : event === '100m' ? 46 : event === '200m' ? 104 : 220}
-            max={event === '50m' ? 36 : event === '100m' ? 80 : event === '200m' ? 170 : 350}
-            step="0.5"
-            value={targetTime}
-            onChange={(e) => setTargetTime(Number(e.target.value))}
-            className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
-          />
-        </div>
 
-        {/* Splits breakdown */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
-          <div className="p-3.5 rounded-xl bg-black border border-white/10">
-            <span className="text-[10px] text-neutral-400 uppercase">First 50m / Lap 1</span>
-            <div className="text-xl font-bold text-white mt-1">
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Projected 1st Half Pace
+            </span>
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
               {pacing.firstHalfSplit}s
             </div>
-            <span className="text-[10px] text-neutral-500">Dive start & 15m breakout</span>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-black border border-white/10">
-            <span className="text-[10px] text-neutral-400 uppercase">Back-Half Split</span>
-            <div className="text-xl font-bold text-white mt-1">
-              {pacing.secondHalfSplit}s
-            </div>
-            <span className="text-[10px] text-neutral-500">
-              Differential: +{(pacing.secondHalfSplit - pacing.firstHalfSplit).toFixed(1)}s
+            <span className="text-[10px] text-neutral-500 font-mono block">
+              Target Cadence: {pacing.targetStrokeRateSpm} spm
             </span>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-black border border-white/10">
-            <span className="text-[10px] text-neutral-400 uppercase">Target Stroke Rate</span>
-            <div className="text-xl font-bold text-white mt-1">
-              {pacing.targetStrokeRateSpm} spm
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Projected 2nd Half Pace
+            </span>
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+              {pacing.secondHalfSplit}s
             </div>
-            <span className="text-[10px] text-neutral-500">Target DPS: ~{pacing.targetDpsMeters}m</span>
+            <span className="text-[10px] text-neutral-500 font-mono block">
+              Target DPS: {pacing.targetDpsMeters}m
+            </span>
           </div>
         </div>
 
-        {/* Pacing Advice */}
-        <div className="p-3.5 rounded-xl bg-black border border-white/10 text-xs text-neutral-300">
-          <strong className="text-white font-mono block mb-1">Olympic Strategy Directive:</strong>
-          {pacing.pacingStrategy}
+        <div className="p-4 rounded-xl bg-black border border-white/10 flex items-start gap-3">
+          <div className="p-1 rounded bg-white text-black font-mono font-bold text-xs">
+            i
+          </div>
+          <div>
+            <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-white">
+              Tactical Pacing Recommendation
+            </h4>
+            <p className="text-xs text-neutral-300 mt-1 leading-relaxed font-sans">
+              {pacing.pacingStrategy}
+            </p>
+          </div>
         </div>
       </div>
     </div>

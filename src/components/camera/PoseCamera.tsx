@@ -72,9 +72,9 @@ export const PoseCamera: React.FC = () => {
   // Snapshot frame capture
   const [capturedSnapshot, setCapturedSnapshot] = useState<string | null>(null)
 
-  // Asymmetry interactive state
-  const [leftPullTime, setLeftPullTime] = useState(0.92)
-  const [rightPullTime, setRightPullTime] = useState(0.85)
+  // Asymmetry interactive state (starts at neutral balanced 1.00s baseline)
+  const [leftPullTime, setLeftPullTime] = useState(1.00)
+  const [rightPullTime, setRightPullTime] = useState(1.00)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
