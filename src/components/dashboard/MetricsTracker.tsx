@@ -13,78 +13,78 @@ export const MetricsTracker: React.FC = () => {
   const pacing = predictPacingCorridor(targetTime, event)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       {/* Stroke Kinematics Calculator */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+      <div className="bg-neutral-950 border border-white/15 rounded-2xl p-6 shadow-sm space-y-6">
         <div>
           <div className="flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-lg font-bold text-white">
+            <Gauge className="w-5 h-5 text-white" />
+            <h3 className="text-lg font-bold text-white tracking-tight">
               Stroke Rate, Distance Per Stroke (DPS) & SWOLF
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time calculation of swimming velocity, stroke efficiency, and stroke rate vs. distance balance.
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Physical decomposition of clean swimming velocity: v = SR × DPS and SWOLF efficiency index.
           </p>
         </div>
 
         {/* 4 Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
               Clean Velocity
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono">
-              {metrics.velocityMps} <span className="text-sm font-normal text-slate-400">m/s</span>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+              {metrics.velocityMps} <span className="text-sm font-normal text-neutral-400">m/s</span>
             </div>
-            <span className="text-[10px] text-slate-500 block">
+            <span className="text-[10px] text-neutral-500 font-mono block">
               Pace: {metrics.pacePer100mSec}s / 100m
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
               Stroke Rate (SR)
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-sky-400 font-mono">
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
               {metrics.strokeRateSpm}{' '}
-              <span className="text-sm font-normal text-slate-400">spm</span>
+              <span className="text-sm font-normal text-neutral-400">spm</span>
             </div>
-            <span className="text-[10px] text-slate-500 block">
-              Cadence: {(60 / (metrics.strokeRateSpm || 1)).toFixed(2)}s / stroke
+            <span className="text-[10px] text-neutral-500 font-mono block">
+              Cadence: {(60 / (metrics.strokeRateSpm || 1)).toFixed(2)}s / cycle
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
               Distance Per Stroke
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
               {metrics.distancePerStrokeMeters}{' '}
-              <span className="text-sm font-normal text-slate-400">m</span>
+              <span className="text-sm font-normal text-neutral-400">m</span>
             </div>
-            <span className="text-[10px] text-slate-500 block">
+            <span className="text-[10px] text-neutral-500 font-mono block">
               Distance per single arm pull
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider">
-              SWOLF Efficiency
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
+              SWOLF Score
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
               {metrics.swolf}
             </div>
-            <span className={`text-[10px] font-semibold block ${metrics.color}`}>
+            <span className="text-[10px] font-mono text-neutral-300 block">
               {metrics.efficiencyLabel}
             </span>
           </div>
         </div>
 
         {/* Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/10 font-mono">
           <div>
-            <label className="text-xs text-slate-400 block mb-1">Pool Distance (m):</label>
+            <label className="text-xs text-neutral-400 block mb-1">Pool Distance (m):</label>
             <div className="flex gap-2">
               {[25, 50, 100].map((d) => (
                 <button
@@ -92,8 +92,8 @@ export const MetricsTracker: React.FC = () => {
                   onClick={() => setDistance(d)}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border ${
                     distance === d
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                      : 'bg-slate-950 text-slate-400 border-slate-800'
+                      ? 'bg-white text-black border-white'
+                      : 'bg-black text-neutral-400 border-white/15 hover:border-white'
                   }`}
                 >
                   {d}m
@@ -103,9 +103,9 @@ export const MetricsTracker: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
+            <div className="flex justify-between text-xs text-neutral-400 mb-1">
               <span>Split Time:</span>
-              <span className="font-mono text-cyan-400">{timeSec}s</span>
+              <span className="text-white font-bold">{timeSec}s</span>
             </div>
             <input
               type="range"
@@ -114,14 +114,14 @@ export const MetricsTracker: React.FC = () => {
               step="0.5"
               value={timeSec}
               onChange={(e) => setTimeSec(Number(e.target.value))}
-              className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
             />
           </div>
 
           <div>
-            <div className="flex justify-between text-xs text-slate-400 mb-1">
+            <div className="flex justify-between text-xs text-neutral-400 mb-1">
               <span>Stroke Count:</span>
-              <span className="font-mono text-emerald-400">{strokes}</span>
+              <span className="text-white font-bold">{strokes}</span>
             </div>
             <input
               type="range"
@@ -129,28 +129,28 @@ export const MetricsTracker: React.FC = () => {
               max="65"
               value={strokes}
               onChange={(e) => setStrokes(Number(e.target.value))}
-              className="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
             />
           </div>
         </div>
       </div>
 
       {/* Pacing Corridor Predictor */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div className="bg-neutral-950 border border-white/15 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-400" />
-              <h3 className="text-lg font-bold text-white">
+              <Zap className="w-5 h-5 text-white" />
+              <h3 className="text-lg font-bold text-white tracking-tight">
                 Race Pacing Corridor & Split Predictor
               </h3>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Optimizes the non-linear interaction between stroke rate and stroke length across race halves.
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Mathematical modeling of speed retention across race segments (Reaction, Clean Speed, Turn Contact).
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <div className="flex items-center gap-1.5 bg-black p-1 rounded-xl border border-white/15">
             {(['50m', '100m', '200m', '400m'] as const).map((ev) => (
               <button
                 key={ev}
@@ -158,13 +158,13 @@ export const MetricsTracker: React.FC = () => {
                   setEvent(ev)
                   if (ev === '50m') setTargetTime(26.0)
                   if (ev === '100m') setTargetTime(58.0)
-                  if (ev === '200m') setTargetTime(126.0)
-                  if (ev === '400m') setTargetTime(270.0)
+                  if (ev === '200m') setTargetTime(125.0)
+                  if (ev === '400m') setTargetTime(265.0)
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium font-mono transition-all ${
                   event === ev
-                    ? 'bg-cyan-500 text-slate-950'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-black font-semibold'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {ev}
@@ -173,38 +173,58 @@ export const MetricsTracker: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span className="text-[11px] text-slate-400 uppercase">Target Split Corridor</span>
-            <div className="flex items-baseline gap-2 font-mono">
-              <span className="text-xl font-bold text-sky-400">{pacing.firstHalfSplit}s</span>
-              <span className="text-slate-500">/</span>
-              <span className="text-xl font-bold text-cyan-400">{pacing.secondHalfSplit}s</span>
+        {/* Target Slider */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-neutral-400 font-mono">
+            <span>Target Race Time:</span>
+            <span className="text-white font-bold text-sm">
+              {targetTime.toFixed(1)}s
+            </span>
+          </div>
+          <input
+            type="range"
+            min={event === '50m' ? 21 : event === '100m' ? 46 : event === '200m' ? 104 : 220}
+            max={event === '50m' ? 36 : event === '100m' ? 80 : event === '200m' ? 170 : 350}
+            step="0.5"
+            value={targetTime}
+            onChange={(e) => setTargetTime(Number(e.target.value))}
+            className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
+          />
+        </div>
+
+        {/* Splits breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
+          <div className="p-3.5 rounded-xl bg-black border border-white/10">
+            <span className="text-[10px] text-neutral-400 uppercase">First 50m / Lap 1</span>
+            <div className="text-xl font-bold text-white mt-1">
+              {pacing.firstHalfSplit}s
             </div>
-            <span className="text-[10px] text-slate-500 block">
-              1st Half vs 2nd Half Split Target
+            <span className="text-[10px] text-neutral-500">Dive start & 15m breakout</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-black border border-white/10">
+            <span className="text-[10px] text-neutral-400 uppercase">Back-Half Split</span>
+            <div className="text-xl font-bold text-white mt-1">
+              {pacing.secondHalfSplit}s
+            </div>
+            <span className="text-[10px] text-neutral-500">
+              Differential: +{(pacing.secondHalfSplit - pacing.firstHalfSplit).toFixed(1)}s
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <span className="text-[11px] text-slate-400 uppercase">Cadence Targets</span>
-            <div className="flex items-baseline gap-3 font-mono">
-              <span className="text-lg font-bold text-emerald-400">
-                {pacing.targetStrokeRateSpm} spm
-              </span>
-              <span className="text-lg font-bold text-purple-400">
-                {pacing.targetDpsMeters}m DPS
-              </span>
+          <div className="p-3.5 rounded-xl bg-black border border-white/10">
+            <span className="text-[10px] text-neutral-400 uppercase">Target Stroke Rate</span>
+            <div className="text-xl font-bold text-white mt-1">
+              {pacing.targetStrokeRateSpm} spm
             </div>
-            <span className="text-[10px] text-slate-500 block">
-              Optimal biomechanical corridor
-            </span>
+            <span className="text-[10px] text-neutral-500">Target DPS: ~{pacing.targetDpsMeters}m</span>
           </div>
+        </div>
 
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-[11px] text-slate-400 uppercase">Race Strategy</span>
-            <p className="text-xs text-slate-300 leading-relaxed">{pacing.pacingStrategy}</p>
-          </div>
+        {/* Pacing Advice */}
+        <div className="p-3.5 rounded-xl bg-black border border-white/10 text-xs text-neutral-300">
+          <strong className="text-white font-mono block mb-1">Olympic Strategy Directive:</strong>
+          {pacing.pacingStrategy}
         </div>
       </div>
     </div>

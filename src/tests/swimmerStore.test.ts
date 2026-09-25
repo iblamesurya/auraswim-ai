@@ -12,12 +12,12 @@ describe('swimmerStore', () => {
     localStorage.clear()
   })
 
-  it('loads default swimmer data with initial streak and logs', () => {
+  it('loads default clean swimmer data with zero initial mock logs', () => {
     const data = loadSwimmerData()
     expect(data.swimmerName).toBe('Competitive Swimmer')
-    expect(data.smrStreakDays).toBeGreaterThan(0)
-    expect(data.workouts.length).toBeGreaterThan(0)
-    expect(data.shoulderLogs.length).toBeGreaterThan(0)
+    expect(data.smrStreakDays).toBe(0)
+    expect(data.workouts.length).toBe(0)
+    expect(data.shoulderLogs.length).toBe(0)
   })
 
   it('adds a new workout and persists to localStorage', () => {

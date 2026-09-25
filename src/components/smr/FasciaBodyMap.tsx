@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { SMR_PROTOCOLS } from '../../lib/data/smrProtocols'
 import type { SMRProtocol } from '../../lib/data/smrProtocols'
-import { Sparkles, ArrowRight, Play, AlertCircle, ShieldAlert } from 'lucide-react'
+import { Sparkles, Play, AlertCircle } from 'lucide-react'
 
 interface FasciaTriggerPoint {
   id: string
@@ -112,20 +112,20 @@ export const FasciaBodyMap: React.FC<FasciaBodyMapProps> = ({ onSelectProtocol }
   }
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+    <div className="bg-neutral-950 border border-white/15 rounded-2xl p-5 shadow-sm space-y-6 text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div>
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
+          <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+            <Sparkles className="w-5 h-5 text-white" />
             Interactive Swimmer Fascia & Trigger Point Map
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-neutral-400">
             Click any trigger point on the anatomical body map to diagnose tight fascia and launch Coach Hekmati's SMR protocol.
           </p>
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-black p-1 rounded-xl border border-white/15 self-start sm:self-auto font-mono">
           <button
             onClick={() => {
               setActiveView('anterior')
@@ -133,8 +133,8 @@ export const FasciaBodyMap: React.FC<FasciaBodyMapProps> = ({ onSelectProtocol }
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeView === 'anterior'
-                ? 'bg-cyan-500 text-slate-950'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-black'
+                : 'text-neutral-400 hover:text-white'
             }`}
           >
             Anterior (Front)
@@ -146,8 +146,8 @@ export const FasciaBodyMap: React.FC<FasciaBodyMapProps> = ({ onSelectProtocol }
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeView === 'posterior'
-                ? 'bg-cyan-500 text-slate-950'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-black'
+                : 'text-neutral-400 hover:text-white'
             }`}
           >
             Posterior (Back)
@@ -155,117 +155,125 @@ export const FasciaBodyMap: React.FC<FasciaBodyMapProps> = ({ onSelectProtocol }
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-        {/* Anatomical Body Canvas with Interactive Hotspots (Left Col: 5 cols) */}
-        <div className="md:col-span-5 relative bg-slate-950 rounded-2xl border border-slate-800 p-4 flex flex-col items-center justify-center min-h-[380px]">
-          <div className="relative w-[220px] h-[360px]">
-            {/* SVG Silhouette */}
-            <svg
-              viewBox="0 0 200 340"
-              className="w-full h-full opacity-40 text-slate-500"
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        {/* Anatomical Silhouette Diagram */}
+        <div className="lg:col-span-5 relative bg-black border border-white/10 rounded-2xl p-6 flex items-center justify-center min-h-[380px]">
+          <svg
+            viewBox="0 0 200 400"
+            className="w-full max-w-[200px] h-[360px] text-neutral-800"
+          >
+            {/* Minimalist Anatomical Silhouette */}
+            <circle cx="100" cy="45" r="22" fill="currentColor" />
+            {/* Neck */}
+            <rect x="92" y="67" width="16" height="15" rx="3" fill="currentColor" />
+            {/* Torso */}
+            <path
+              d="M60 85 L140 85 L125 210 L75 210 Z"
               fill="currentColor"
-            >
-              {/* Head */}
-              <circle cx="100" cy="28" r="20" />
-              {/* Neck */}
-              <rect x="94" y="47" width="12" height="15" rx="3" />
-              {/* Torso */}
-              <path d="M60 62 L140 62 L130 180 L70 180 Z" rx="10" />
-              {/* Arms */}
-              <path d="M56 65 L30 140 L38 210 L48 210 L42 145 L62 80 Z" />
-              <path d="M144 65 L170 140 L162 210 L152 210 L158 145 L138 80 Z" />
-              {/* Legs */}
-              <path d="M72 185 L65 260 L68 325 L86 325 L88 260 L97 185 Z" />
-              <path d="M128 185 L135 260 L132 325 L114 325 L112 260 L103 185 Z" />
-            </svg>
+            />
+            {/* Arms */}
+            <path
+              d="M60 85 L35 180 L30 240 L40 240 L50 185 L65 110 Z"
+              fill="currentColor"
+            />
+            <path
+              d="M140 85 L165 180 L170 240 L160 240 L150 185 L135 110 Z"
+              fill="currentColor"
+            />
+            {/* Pelvis & Legs */}
+            <path
+              d="M75 210 L65 300 L60 375 L75 375 L85 300 L95 230 Z"
+              fill="currentColor"
+            />
+            <path
+              d="M125 210 L135 300 L140 375 L125 375 L115 300 L105 230 Z"
+              fill="currentColor"
+            />
+          </svg>
 
-            {/* Interactive Pins */}
-            {visiblePoints.map((tp) => {
-              const isSelected = selectedTp.id === tp.id
-              return (
-                <button
-                  key={tp.id}
-                  onClick={() => setSelectedTp(tp)}
-                  style={{
-                    left: `${tp.x}%`,
-                    top: `${tp.y}%`,
-                  }}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
-                  title={tp.name}
+          {/* Trigger point pins on body */}
+          {visiblePoints.map((tp) => {
+            const isSelected = selectedTp.id === tp.id
+            return (
+              <button
+                key={tp.id}
+                onClick={() => setSelectedTp(tp)}
+                style={{ left: `${tp.x}%`, top: `${tp.y}%` }}
+                className={`absolute transform -translate-x-1/2 -translate-y-1/2 group focus:outline-none`}
+              >
+                <span
+                  className={`block rounded-full transition-all ${
+                    isSelected
+                      ? 'w-5 h-5 bg-white shadow-[0_0_12px_rgba(255,255,255,1)] border-2 border-black'
+                      : 'w-3.5 h-3.5 bg-neutral-400 hover:bg-white border border-black'
+                  }`}
+                />
+                <span
+                  className={`absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] font-mono px-2 py-0.5 rounded transition-all ${
+                    isSelected
+                      ? 'bg-white text-black font-bold border border-white'
+                      : 'bg-black text-neutral-300 border border-white/20'
+                  }`}
                 >
-                  <span
-                    className={`relative flex items-center justify-center w-7 h-7 rounded-full transition-all ${
-                      isSelected
-                        ? 'bg-cyan-500 text-slate-950 scale-125 shadow-lg shadow-cyan-500/50'
-                        : 'bg-slate-900 border-2 border-cyan-400 text-cyan-300 hover:scale-110'
-                    }`}
-                  >
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        isSelected ? 'bg-slate-950' : 'bg-cyan-400 animate-ping'
-                      }`}
-                    ></span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="text-[11px] text-slate-400 mt-2 font-mono">
-            {activeView === 'anterior' ? 'ANTERIOR VIEW (CHEST/ARMS)' : 'POSTERIOR VIEW (BACK/FEET)'}
-          </div>
+                  {tp.name}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Selected Trigger Point Diagnostic Card (Right Col: 7 cols) */}
-        <div className="md:col-span-7 space-y-4">
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
-                {selectedTp.locationLabel}
-              </span>
-              <span className="text-xs text-slate-400 font-mono">Active Target</span>
+        {/* Diagnosis & Coach Recommendation Card */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="bg-black border border-white/15 rounded-2xl p-5 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                  {selectedTp.locationLabel}
+                </span>
+                <h4 className="text-xl font-bold text-white mt-0.5">
+                  {selectedTp.name}
+                </h4>
+              </div>
+              <button
+                onClick={handleLaunchProtocol}
+                className="px-4 py-2 bg-white hover:bg-neutral-200 text-black font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <Play className="w-3.5 h-3.5 fill-black" />
+                <span>Launch SMR Routine</span>
+              </button>
             </div>
 
-            <h4 className="text-xl font-bold text-white">{selectedTp.name}</h4>
-
-            {/* In-Water Symptoms */}
-            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-xs font-bold uppercase text-amber-400 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" />
-                Signs of Tight Fascia in the Pool:
+            {/* In-Water Symptom */}
+            <div className="space-y-1 pt-2 border-t border-white/10 text-xs">
+              <span className="font-mono font-bold text-neutral-300 uppercase text-[10px] block">
+                Symptom in the Pool:
               </span>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-neutral-300 leading-relaxed font-sans">
                 {selectedTp.symptomInWater}
               </p>
             </div>
 
-            {/* Deniz Hekmati Palpation Test */}
-            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-xs font-bold uppercase text-cyan-400 flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4" />
-                Coach Deniz Hekmati's Palpation Test:
+            {/* Palpation Test */}
+            <div className="space-y-1 pt-2 border-t border-white/10 text-xs">
+              <span className="font-mono font-bold text-neutral-300 uppercase text-[10px] block">
+                Palpation Self-Check (How to find it):
               </span>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-neutral-300 leading-relaxed font-sans">
                 {selectedTp.palpationTest}
               </p>
             </div>
 
-            {/* Sports Science Advice */}
-            <div className="text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
-              <strong className="text-slate-200">Sports Science Insight: </strong>
-              {selectedTp.denizHekmatiAdvice}
-            </div>
-
-            {/* Launch Button */}
-            <div className="pt-2">
-              <button
-                onClick={handleLaunchProtocol}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all"
-              >
-                <Play className="w-4 h-4 fill-slate-950" />
-                <span>Launch Guided SMR Timer for {selectedTp.name}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            {/* Coach Deniz Hekmati Advice */}
+            <div className="p-3.5 rounded-xl bg-neutral-900 border border-white/15 space-y-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-white" />
+                <span className="font-mono font-bold text-white uppercase text-[10px]">
+                  Coach Deniz Hekmati Sports Science Directive:
+                </span>
+              </div>
+              <p className="text-neutral-300 leading-relaxed font-sans">
+                "{selectedTp.denizHekmatiAdvice}"
+              </p>
             </div>
           </div>
         </div>

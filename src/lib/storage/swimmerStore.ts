@@ -51,11 +51,11 @@ export interface SwimmerProfileStore {
   weeklySchedule: WeeklyScheduleDay[]
 }
 
-const STORAGE_KEY = 'auraswim_profile_data_v1'
+const STORAGE_KEY = 'auraswim_profile_data_v2' // Incremented to v2 to clean any old cached fake values
 
-const DEFAULT_SCHEDULE: WeeklyScheduleDay[] = [
-  { day: 'Mon', label: 'Monday', type: 'Morning Double + Evening', targetMeters: 7500, hasDryland: true, hasCameraAudit: true, completed: true },
-  { day: 'Tue', label: 'Tuesday', type: 'Afternoon Threshold', targetMeters: 6000, hasDryland: false, hasCameraAudit: false, completed: true },
+export const DEFAULT_SCHEDULE: WeeklyScheduleDay[] = [
+  { day: 'Mon', label: 'Monday', type: 'Morning Double + Evening', targetMeters: 7500, hasDryland: true, hasCameraAudit: true, completed: false },
+  { day: 'Tue', label: 'Tuesday', type: 'Afternoon Threshold', targetMeters: 6000, hasDryland: false, hasCameraAudit: false, completed: false },
   { day: 'Wed', label: 'Wednesday', type: 'Recovery + Technical', targetMeters: 4500, hasDryland: true, hasCameraAudit: true, completed: false },
   { day: 'Thu', label: 'Thursday', type: 'Afternoon Threshold', targetMeters: 6200, hasDryland: false, hasCameraAudit: false, completed: false },
   { day: 'Fri', label: 'Friday', type: 'Sprint + Camera Audit', targetMeters: 5500, hasDryland: true, hasCameraAudit: true, completed: false },
@@ -63,85 +63,16 @@ const DEFAULT_SCHEDULE: WeeklyScheduleDay[] = [
   { day: 'Sun', label: 'Sunday', type: 'Rest & Active SMR', targetMeters: 0, hasDryland: false, hasCameraAudit: false, completed: false },
 ]
 
-const DEFAULT_STORE: SwimmerProfileStore = {
+export const DEFAULT_STORE: SwimmerProfileStore = {
   swimmerName: 'Competitive Swimmer',
-  weeklyTargetMeters: 34200,
-  smrCompletedIds: ['pec-minor', 'subscapularis'],
-  smrStreakDays: 14,
-  lastSmrDate: new Date().toISOString().split('T')[0],
-  mobilityLogs: [
-    {
-      id: 'm-1',
-      date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-      type: 'streamline',
-      measuredValue: 174,
-      status: 'optimal',
-      passed: true,
-      notes: 'Thoracic extension clear, no lumbar arching.',
-    },
-    {
-      id: 'm-2',
-      date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0],
-      type: 'evf',
-      measuredValue: 118,
-      status: 'optimal',
-      passed: true,
-      notes: 'High elbow catch locked on right arm.',
-    },
-  ],
+  weeklyTargetMeters: 30000,
+  smrCompletedIds: [],
+  smrStreakDays: 0,
+  lastSmrDate: '',
+  mobilityLogs: [],
   weeklySchedule: DEFAULT_SCHEDULE,
-  workouts: [
-    {
-      id: 'w-1',
-      date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
-      meters: 5400,
-      durationMin: 90,
-      rpeScale1to10: 7,
-      strokeRateSpm: 44,
-      dpsMeters: 1.95,
-      notes: 'Threshold aerobic freestyle set.',
-    },
-    {
-      id: 'w-2',
-      date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-      meters: 6000,
-      durationMin: 100,
-      rpeScale1to10: 8,
-      strokeRateSpm: 46,
-      dpsMeters: 1.88,
-      notes: 'Pacing 200m broken swims.',
-    },
-    {
-      id: 'w-3',
-      date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0],
-      meters: 4800,
-      durationMin: 80,
-      rpeScale1to10: 6,
-      strokeRateSpm: 42,
-      dpsMeters: 2.05,
-      notes: 'Recovery kick and stroke drill focus.',
-    },
-  ],
-  shoulderLogs: [
-    {
-      id: 's-1',
-      date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-      painScale1to10: 3,
-      affectedSide: 'right',
-      triggerPointsNoted: ['Pec Minor', 'Subscapularis'],
-      mobilityScore1to100: 75,
-      notes: 'Mild anterior tightness after fly sprint.',
-    },
-    {
-      id: 's-2',
-      date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0],
-      painScale1to10: 1,
-      affectedSide: 'none',
-      triggerPointsNoted: [],
-      mobilityScore1to100: 92,
-      notes: 'Pec minor SMR released tightness, shoulders felt loose in morning double.',
-    },
-  ],
+  workouts: [],
+  shoulderLogs: [],
 }
 
 export function loadSwimmerData(): SwimmerProfileStore {
@@ -160,6 +91,17 @@ export function saveSwimmerData(data: SwimmerProfileStore): void {
   } catch (err) {
     console.error('Failed to save swimmer profile data to localStorage', err)
   }
+}
+
+export function updateSwimmerProfile(params: { name?: string; weeklyTargetMeters?: number }): SwimmerProfileStore {
+  const current = loadSwimmerData()
+  const updated: SwimmerProfileStore = {
+    ...current,
+    swimmerName: params.name !== undefined ? params.name : current.swimmerName,
+    weeklyTargetMeters: params.weeklyTargetMeters !== undefined ? params.weeklyTargetMeters : current.weeklyTargetMeters,
+  }
+  saveSwimmerData(updated)
+  return updated
 }
 
 export function addWorkout(workout: Omit<WorkoutLog, 'id'>): SwimmerProfileStore {
@@ -198,7 +140,7 @@ export function recordSMRCompletion(protocolId: string): SwimmerProfileStore {
   const isNewDay = current.lastSmrDate !== today
 
   const newIds = alreadyCompleted ? current.smrCompletedIds : [...current.smrCompletedIds, protocolId]
-  const newStreak = isNewDay ? current.smrStreakDays + 1 : current.smrStreakDays
+  const newStreak = isNewDay ? (current.smrStreakDays || 0) + 1 : current.smrStreakDays
 
   const updated: SwimmerProfileStore = {
     ...current,
@@ -253,22 +195,23 @@ AURASWIM AI • ATHLETE COACH REPORT
 ========================================
 Swimmer Name: ${data.swimmerName}
 Report Generated: ${new Date().toLocaleDateString()}
-Weekly Target: ${data.weeklyTargetMeters.toLocaleString()}m
-Recent Total Logged: ${totalMeters.toLocaleString()}m
+Weekly Target: ${data.weeklyTargetMeters ? `${data.weeklyTargetMeters.toLocaleString()}m` : 'Not Set'}
+Total Meterage Logged: ${totalMeters.toLocaleString()}m
 SMR Completion Streak: ${data.smrStreakDays} Consecutive Days
 
 LATEST SHOULDER STATUS:
-- Pain Scale: ${latestShoulder ? `${latestShoulder.painScale1to10}/10 (${latestShoulder.affectedSide} side)` : 'No recent pain logged'}
+- Pain Scale: ${latestShoulder ? `${latestShoulder.painScale1to10}/10 (${latestShoulder.affectedSide} side)` : 'No pain logged'}
 - Mobility Score: ${latestShoulder ? `${latestShoulder.mobilityScore1to100}%` : 'N/A'}
-- Active Trigger Points: ${latestShoulder?.triggerPointsNoted.join(', ') || 'None reported'}
+- Active Trigger Points: ${latestShoulder?.triggerPointsNoted?.length ? latestShoulder.triggerPointsNoted.join(', ') : 'None reported'}
 
 LATEST AI CAMERA SCREENING:
-- Test: ${latestMobility?.type.toUpperCase() || 'Streamline'}
-- Score: ${latestMobility?.measuredValue || 174}° (${latestMobility?.status.toUpperCase() || 'OPTIMAL'})
-- Kinematic Assessment: ${latestMobility?.passed ? 'PASSED - Cleared for High-Intensity Sets' : 'NEEDS SMR RESTORATION'}
+- Test: ${latestMobility ? latestMobility.type.toUpperCase() : 'None completed'}
+- Score: ${latestMobility ? `${latestMobility.measuredValue}° (${latestMobility.status.toUpperCase()})` : 'N/A'}
+- Kinematic Assessment: ${latestMobility ? (latestMobility.passed ? 'PASSED - Cleared for High-Intensity Sets' : 'NEEDS SMR RESTORATION') : 'No camera tests performed yet'}
 
 TRAINING LOAD & INJURY RISK STATUS:
-- ACWR Target: 0.80 - 1.30 (Sweet Spot)
-- Soft-Tissue Protection: Subscapularis & Pec Minor SMR active
+- Workouts Logged: ${data.workouts.length} sessions
+- ACWR Target Corridor: 0.80 - 1.30 (Sweet Spot)
+- Soft-Tissue Protection: Subscapularis & Pec Minor SMR
 ========================================`
 }

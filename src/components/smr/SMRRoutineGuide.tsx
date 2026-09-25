@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { SMR_PROTOCOLS } from '../../lib/data/smrProtocols'
 import type { SMRProtocol } from '../../lib/data/smrProtocols'
-import { Play, Pause, RotateCcw, CheckCircle, AlertCircle, ShieldAlert, Sparkles, Volume2 } from 'lucide-react'
+import { Play, Pause, RotateCcw, CheckCircle, Sparkles, Volume2 } from 'lucide-react'
 
 export const SMRRoutineGuide: React.FC = () => {
   const [selectedProtocol, setSelectedProtocol] = useState<SMRProtocol>(SMR_PROTOCOLS[0])
@@ -10,7 +10,6 @@ export const SMRRoutineGuide: React.FC = () => {
   const [completedProtocols, setCompletedProtocols] = useState<string[]>([])
   const [contractRelaxPhase, setContractRelaxPhase] = useState<'contract' | 'relax'>('relax')
 
-  // Audio tone generator using Web Audio API for zero-dependency sound chimes
   const playBeep = (freq = 440, durationMs = 150) => {
     try {
       const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
@@ -29,14 +28,12 @@ export const SMRRoutineGuide: React.FC = () => {
     }
   }
 
-  // Switch protocol
   const handleSelectProtocol = (protocol: SMRProtocol) => {
     setSelectedProtocol(protocol)
     setTimeLeft(protocol.durationSec)
     setIsRunning(false)
   }
 
-  // Timer loop
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null
 
@@ -44,7 +41,7 @@ export const SMRRoutineGuide: React.FC = () => {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            playBeep(880, 400) // Finish chime
+            playBeep(880, 400)
             setIsRunning(false)
             setCompletedProtocols((done) =>
               done.includes(selectedProtocol.id) ? done : [...done, selectedProtocol.id]
@@ -52,7 +49,6 @@ export const SMRRoutineGuide: React.FC = () => {
             return 0
           }
 
-          // Cycle contract-relax cues every 13 seconds (3s contract, 10s relax)
           const cyclePosition = prev % 13
           if (cyclePosition <= 3) {
             setContractRelaxPhase('contract')
@@ -84,22 +80,22 @@ export const SMRRoutineGuide: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       {/* Title & Introduction */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+      <div className="bg-neutral-950 border border-white/15 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
+            <h2 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+              <Sparkles className="w-5 h-5 text-white" />
               Swimmer Self-Myofascial Release (SMR) Guide
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-neutral-400 mt-1">
               Authored from Coach Deniz Hekmati’s sports science protocols. Release restricted fascia to prevent "swimmer’s shoulder" and expand stroke reach.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Completed:</span>
-            <span className="px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 font-mono text-xs border border-cyan-800">
+          <div className="flex items-center gap-2 font-mono">
+            <span className="text-xs text-neutral-400">Completed:</span>
+            <span className="px-2.5 py-1 rounded bg-black text-white text-xs border border-white/20">
               {completedProtocols.length} / {SMR_PROTOCOLS.length}
             </span>
           </div>
@@ -109,7 +105,7 @@ export const SMRRoutineGuide: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Protocol Selector List (Left Col) */}
         <div className="lg:col-span-4 space-y-2.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 px-1">
             Target Muscle Protocols
           </h3>
           <div className="space-y-2">
@@ -122,26 +118,24 @@ export const SMRRoutineGuide: React.FC = () => {
                   onClick={() => handleSelectProtocol(p)}
                   className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-start justify-between gap-3 ${
                     isSelected
-                      ? 'bg-gradient-to-r from-cyan-950/60 to-slate-900 border-cyan-500/60 text-white shadow-lg'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/80'
+                      ? 'bg-black border-white text-white shadow-sm'
+                      : 'bg-neutral-950 border-white/10 text-neutral-400 hover:border-white/30 hover:text-white'
                   }`}
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{p.name}</span>
-                    </div>
-                    <p className="text-xs text-slate-400">{p.targetMuscle}</p>
-                    <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500">
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                    <span className="font-semibold text-sm text-white block">{p.name}</span>
+                    <p className="text-xs text-neutral-400">{p.targetMuscle}</p>
+                    <div className="flex items-center gap-2 pt-1 text-[11px] font-mono text-neutral-400">
+                      <span className="px-1.5 py-0.5 rounded bg-black border border-white/15 text-white">
                         {p.equipment}
                       </span>
                       <span>{p.durationSec}s</span>
                     </div>
                   </div>
                   {isDone ? (
-                    <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
                   ) : (
-                    <span className="w-2 h-2 rounded-full bg-slate-700 flex-shrink-0 mt-2"></span>
+                    <span className="w-2 h-2 rounded-full bg-neutral-700 flex-shrink-0 mt-2" />
                   )}
                 </button>
               )
@@ -149,48 +143,73 @@ export const SMRRoutineGuide: React.FC = () => {
           </div>
         </div>
 
-        {/* Active Protocol Interactive Panel (Right Col) */}
-        <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        {/* Active Timer & Protocol Instructions (Right Col) */}
+        <div className="lg:col-span-8 bg-neutral-950 border border-white/15 rounded-2xl p-6 shadow-sm space-y-6">
+          {/* Active Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 text-xs rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-medium">
-                  {selectedProtocol.category.toUpperCase()}
-                </span>
-                <span className="text-xs text-slate-400">
-                  Required Tool: <strong className="text-slate-200">{selectedProtocol.equipment}</strong>
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-white mt-1">
-                {selectedProtocol.name}
-              </h3>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                ACTIVE PROTOCOL
+              </span>
+              <h3 className="text-2xl font-bold text-white tracking-tight">{selectedProtocol.name}</h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Target: {selectedProtocol.targetMuscle} • Equipment: {selectedProtocol.equipment}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 font-mono">
+              <span className="px-3 py-1 rounded bg-black border border-white/20 text-xs text-white">
+                {selectedProtocol.category.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          {/* Timer Display */}
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">
+            <div className="relative w-44 h-44 rounded-full border-4 border-white/10 flex flex-col items-center justify-center bg-black shadow-inner">
+              <span className="text-5xl font-mono font-extrabold text-white">
+                {timeLeft}s
+              </span>
+              <span className="text-[11px] uppercase tracking-wider font-mono text-neutral-400 mt-1">
+                {isRunning ? 'Timer Active' : timeLeft === 0 ? 'Completed!' : 'Ready'}
+              </span>
             </div>
 
-            {/* Timer Display & Controls */}
-            <div className="flex items-center gap-4 bg-slate-950 px-4 py-2 rounded-2xl border border-slate-800">
-              <div className="text-center font-mono">
-                <span className="text-2xl sm:text-3xl font-extrabold text-cyan-400">
-                  {Math.floor(timeLeft / 60)}:
-                  {(timeLeft % 60).toString().padStart(2, '0')}
+            <div className="space-y-4 max-w-sm w-full">
+              {/* Active Contract / Relax cue */}
+              <div className="p-4 rounded-xl bg-black border border-white/15 space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5" />
+                  Dynamic Breath Cue
                 </span>
+                <div className="text-lg font-bold font-mono text-white">
+                  {contractRelaxPhase === 'contract'
+                    ? '1. TENSE MUSCLE (3s)'
+                    : '2. EXHALE & SINK DEEP (10s)'}
+                </div>
+                <p className="text-xs text-neutral-400">
+                  {contractRelaxPhase === 'contract'
+                    ? 'Gently contract the muscle against the ball to trigger GTO autogenic inhibition.'
+                    : 'Breathe out slowly through the nose and let the fascia melt over the ball.'}
+                </p>
               </div>
-              <div className="flex items-center gap-1.5">
+
+              {/* Timer Controls */}
+              <div className="flex items-center gap-3">
                 <button
                   onClick={toggleTimer}
-                  className={`p-2.5 rounded-xl font-semibold flex items-center justify-center transition-all ${
+                  className={`flex-1 py-3 px-5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all ${
                     isRunning
-                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
-                      : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20'
+                      ? 'bg-neutral-800 text-white border border-white/30'
+                      : 'bg-white text-black hover:bg-neutral-200 shadow-sm'
                   }`}
-                  title={isRunning ? 'Pause' : 'Start'}
                 >
-                  {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                  {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-black" />}
+                  <span>{isRunning ? 'Pause' : timeLeft === 0 ? 'Repeat Routine' : 'Start Timer'}</span>
                 </button>
                 <button
                   onClick={resetTimer}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                  title="Reset"
+                  className="p-3 rounded-xl bg-black hover:bg-neutral-900 text-white border border-white/20 transition-colors"
+                  title="Reset Timer"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
@@ -198,78 +217,31 @@ export const SMRRoutineGuide: React.FC = () => {
             </div>
           </div>
 
-          {/* Contract-Relax Cue Banner */}
-          {isRunning && (
-            <div
-              className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                contractRelaxPhase === 'contract'
-                  ? 'bg-amber-950/40 border-amber-500/60 text-amber-200'
-                  : 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Volume2 className="w-4 h-4 animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {contractRelaxPhase === 'contract'
-                    ? '⚡ Tense & Contract Muscle (3 Seconds)'
-                    : '🌬️ Exhale & Sink Over Ball (10 Seconds)'}
-                </span>
-              </div>
-              <span className="text-xs font-mono">
-                {contractRelaxPhase === 'contract' ? 'Hold & Squeeze' : 'Deep Melt'}
+          {/* Instructions & Coaching Directives */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/10 text-xs">
+            <div className="p-4 rounded-xl bg-black border border-white/10 space-y-2">
+              <span className="font-mono font-bold text-white uppercase text-[11px] block">
+                Execution Steps:
               </span>
-            </div>
-          )}
-
-          {/* Why it Matters for Swimmers */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5">
-            <h4 className="text-xs font-bold uppercase text-cyan-400 tracking-wider">
-              Why This Matters for Her Swimming:
-            </h4>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              {selectedProtocol.importanceForSwimmer}
-            </p>
-          </div>
-
-          {/* Step-by-Step Instructions */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">
-              Step-by-Step Technique:
-            </h4>
-            <div className="space-y-2">
-              {selectedProtocol.stepByStep.map((step, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/40 border border-slate-800/80"
-                >
-                  <span className="w-6 h-6 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {idx + 1}
-                  </span>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Visual Tip and Safety Warning */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-200 block mb-0.5">
-                  Visual & Body Cue:
-                </span>
-                <p className="text-xs text-slate-400">{selectedProtocol.visualTip}</p>
-              </div>
+              <ul className="space-y-1.5 text-neutral-300">
+                {selectedProtocol.stepByStep.map((step: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-neutral-500 font-mono">{idx + 1}.</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-start gap-2.5">
-              <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-slate-200 block mb-0.5">
-                  Safety Precaution:
-                </span>
-                <p className="text-xs text-slate-400">{selectedProtocol.warning}</p>
+            <div className="p-4 rounded-xl bg-black border border-white/10 space-y-2">
+              <span className="font-mono font-bold text-white uppercase text-[11px] block">
+                Why It Works (Biomechanics):
+              </span>
+              <p className="text-neutral-300 leading-relaxed font-sans">
+                {selectedProtocol.importanceForSwimmer}
+              </p>
+              <div className="pt-2 border-t border-white/5 text-[11px] text-neutral-400">
+                Technique: {selectedProtocol.contractRelaxTechnique}
               </div>
             </div>
           </div>

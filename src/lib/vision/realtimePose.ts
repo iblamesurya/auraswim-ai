@@ -12,7 +12,6 @@ let isInitializing = false
 export async function getPoseDetector(): Promise<poseDetection.PoseDetector> {
   if (detectorInstance) return detectorInstance
   if (isInitializing) {
-    // Wait until initialized
     while (isInitializing) {
       await new Promise((r) => setTimeout(r, 50))
     }
@@ -73,14 +72,14 @@ export function extractSwimmerJoints(pose: poseDetection.Pose): ExtractedSwimmer
 }
 
 /**
- * Draws real-time skeleton overlay on target canvas
+ * Draws real-time skeleton overlay on target canvas (Monochrome Classy Aesthetic)
  */
 export function drawSkeleton(
   ctx: CanvasRenderingContext2D,
   joints: ExtractedSwimmerJoints,
   width: number,
   height: number,
-  color = '#06b6d4'
+  color = '#ffffff'
 ): void {
   ctx.clearRect(0, 0, width, height)
 
@@ -98,7 +97,7 @@ export function drawSkeleton(
     [joints.leftHip, joints.rightHip],
   ]
 
-  ctx.lineWidth = 4
+  ctx.lineWidth = 3
   ctx.strokeStyle = color
   ctx.lineCap = 'round'
 
@@ -116,11 +115,11 @@ export function drawSkeleton(
   for (const kp of joints.allKeypoints) {
     if ((kp.score ?? 0) >= 0.3) {
       ctx.beginPath()
-      ctx.arc(kp.x, kp.y, 6, 0, 2 * Math.PI)
-      ctx.fillStyle = '#38bdf8'
+      ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI)
+      ctx.fillStyle = '#ffffff'
       ctx.fill()
       ctx.lineWidth = 2
-      ctx.strokeStyle = '#ffffff'
+      ctx.strokeStyle = '#000000'
       ctx.stroke()
     }
   }

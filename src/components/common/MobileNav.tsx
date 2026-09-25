@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, Camera, HeartPulse, Activity, BookOpen, MessageSquare, ClipboardList } from 'lucide-react'
+import { Calendar, Camera, HeartPulse, Activity, BookOpen, MessageSquare, ClipboardList, Gauge } from 'lucide-react'
 
 interface MobileNavProps {
   activeTab: string
@@ -10,6 +10,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab })
   const navItems = [
     { id: 'schedule', label: 'Schedule', icon: Calendar },
     { id: 'camera', label: 'Vision AI', icon: Camera },
+    { id: 'pro-suite', label: 'Pro Suite', icon: Gauge },
     { id: 'smr', label: 'Fascia/SMR', icon: HeartPulse },
     { id: 'analytics', label: 'ACWR Load', icon: Activity },
     { id: 'journal', label: 'Journal', icon: ClipboardList },
@@ -18,7 +19,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab })
   ]
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 px-1 py-1 safe-bottom overflow-x-auto">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-1 py-1 safe-bottom overflow-x-auto">
       <div className="flex items-center justify-around min-w-full">
         {navItems.map((item) => {
           const Icon = item.icon
@@ -27,20 +28,18 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, setActiveTab })
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
-                isActive
-                  ? 'text-cyan-400 font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
+              className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-lg transition-all ${
+                isActive ? 'text-white font-bold' : 'text-neutral-500 hover:text-neutral-300'
               }`}
             >
               <div
-                className={`p-1.5 rounded-lg transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400'
+                className={`p-1 rounded-md transition-all ${
+                  isActive ? 'bg-white text-black' : 'text-neutral-400'
                 }`}
               >
-                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Icon className="w-4 h-4" />
               </div>
-              <span className="text-[9px] sm:text-[10px] tracking-tight whitespace-nowrap">
+              <span className="text-[9px] tracking-tight whitespace-nowrap mt-0.5">
                 {item.label}
               </span>
             </button>

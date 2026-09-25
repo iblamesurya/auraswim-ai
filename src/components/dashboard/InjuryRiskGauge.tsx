@@ -1,91 +1,117 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { calculateACWR } from '../../lib/biomechanics/acwrModel'
-import { Activity, Info } from 'lucide-react'
+import { loadSwimmerData } from '../../lib/storage/swimmerStore'
+import { Activity, Info, RefreshCw } from 'lucide-react'
 
 export const InjuryRiskGauge: React.FC = () => {
-  const [acuteMeters, setAcuteMeters] = useState<number>(36000)
-  const [chronicMeters, setChronicMeters] = useState<number>(30000)
+  const [acuteMeters, setAcuteMeters] = useState<number>(0)
+  const [chronicMeters, setChronicMeters] = useState<number>(0)
+  const [useJournalData, setUseJournalData] = useState<boolean>(true)
+
+  useEffect(() => {
+    const data = loadSwimmerData()
+    const workouts = data.workouts || []
+
+    if (workouts.length > 0 && useJournalData) {
+      const now = Date.now()
+      const sevenDaysAgo = now - 7 * 86400000
+      const twentyEightDaysAgo = now - 28 * 86400000
+
+      const acuteSum = workouts
+        .filter((w) => new Date(w.date).getTime() >= sevenDaysAgo)
+        .reduce((sum, w) => sum + w.meters, 0)
+
+      const chronicSum = workouts
+        .filter((w) => new Date(w.date).getTime() >= twentyEightDaysAgo)
+        .reduce((sum, w) => sum + w.meters, 0)
+      const chronicAvg = Math.round(chronicSum / 4)
+
+      setAcuteMeters(acuteSum)
+      setChronicMeters(chronicAvg)
+    } else if (!useJournalData) {
+      // Default manual calibration starting points if user is testing
+      if (acuteMeters === 0) setAcuteMeters(30000)
+      if (chronicMeters === 0) setChronicMeters(28000)
+    }
+  }, [useJournalData])
 
   const result = calculateACWR(acuteMeters, chronicMeters)
-
-  // Clamp percentage for needle gauge (0 to 2.2 maps to 0% to 100%)
   const gaugePercent = Math.min(100, Math.max(0, (result.acwr / 2.0) * 100))
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+    <div className="bg-neutral-950 border border-white/15 rounded-2xl p-6 shadow-sm space-y-6 text-white">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-lg font-bold text-white">
-              Acute-to-Chronic Workload Ratio (ACWR) & Shoulder Risk
+            <Activity className="w-5 h-5 text-white" />
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              Acute-to-Chronic Workload Ratio (ACWR) & Rotator Cuff Risk
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Gabbett Sports Science Model: Compares this week's load against past 28-day chronic baseline to prevent rotator cuff tears.
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Gabbett Biomechanical Model: Evaluates 7-day acute spike versus 28-day baseline to prevent swimmer shoulder tendinopathy.
           </p>
         </div>
-        <span
-          className={`px-3 py-1 text-xs font-bold rounded-full ${
-            result.riskZone === 'optimal'
-              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-              : result.riskZone === 'undertrained'
-              ? 'bg-sky-950 text-sky-400 border border-sky-800'
-              : result.riskZone === 'elevated_risk'
-              ? 'bg-amber-950 text-amber-400 border border-amber-800'
-              : 'bg-rose-950 text-rose-400 border border-rose-800'
-          }`}
-        >
-          {result.riskLabel.toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setUseJournalData(!useJournalData)}
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-white/20 text-neutral-300 hover:text-white hover:border-white transition-all flex items-center gap-1 font-mono"
+          >
+            <RefreshCw className="w-3 h-3" />
+            {useJournalData ? 'Journal Auto-Sync: ON' : 'Manual Sliders: ACTIVE'}
+          </button>
+          <span className="px-3 py-1 text-xs font-mono font-semibold rounded-lg border border-white/20 bg-white/5 text-white">
+            {result.riskLabel.toUpperCase()}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-        {/* Visual Gauge */}
-        <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col items-center justify-center space-y-4">
+        {/* Monochromatic Visual Gauge */}
+        <div className="bg-black p-5 rounded-xl border border-white/10 flex flex-col items-center justify-center space-y-4">
           <div className="relative w-48 h-24 overflow-hidden flex items-end justify-center">
             {/* Semicircle track */}
-            <div className="absolute top-0 w-48 h-48 rounded-full border-[18px] border-slate-800 border-b-transparent border-l-transparent transform -rotate-45"></div>
+            <div className="absolute top-0 w-48 h-48 rounded-full border-[18px] border-neutral-900 border-b-transparent border-l-transparent transform -rotate-45" />
             {/* Color segments */}
             <div className="text-center z-10">
               <span className="text-4xl font-extrabold text-white font-mono">
                 {result.acwr.toFixed(2)}
               </span>
-              <span className="block text-[11px] text-slate-400 uppercase tracking-wider">
-                ACWR Score
+              <span className="block text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
+                ACWR Ratio
               </span>
             </div>
           </div>
 
-          {/* Linear bar representation */}
+          {/* Monochromatic linear bar representation */}
           <div className="w-full space-y-1.5">
-            <div className="relative w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-              <div className="w-[40%] bg-sky-600/70" title="Undertrained (< 0.8)"></div>
-              <div className="w-[25%] bg-emerald-500" title="Sweet Spot (0.8 - 1.3)"></div>
-              <div className="w-[10%] bg-amber-500" title="Elevated Risk (1.3 - 1.5)"></div>
-              <div className="w-[25%] bg-rose-500" title="Danger Spike (> 1.5)"></div>
+            <div className="relative w-full h-2.5 bg-neutral-900 rounded-full overflow-hidden flex border border-white/10">
+              <div className="w-[40%] bg-neutral-700" title="Low Load (< 0.8)" />
+              <div className="w-[25%] bg-white" title="Optimal Sweet Spot (0.8 - 1.3)" />
+              <div className="w-[10%] bg-neutral-500" title="Elevated Risk (1.3 - 1.5)" />
+              <div className="w-[25%] bg-neutral-800" title="Danger Spike (> 1.5)" />
               {/* Pointer */}
               <div
-                className="absolute top-0 bottom-0 w-1.5 bg-white shadow-lg transition-all duration-300"
+                className="absolute top-0 bottom-0 w-1.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all duration-300"
                 style={{ left: `calc(${gaugePercent}% - 3px)` }}
-              ></div>
+              />
             </div>
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-              <span>0.0 (Low)</span>
-              <span className="text-emerald-400">0.8 - 1.3 (Optimal)</span>
-              <span className="text-rose-400">1.5+ (Danger)</span>
+            <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
+              <span>0.0 Low</span>
+              <span className="text-white font-bold">0.8 - 1.3 Sweet Spot</span>
+              <span>1.5+ Spike</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 w-full text-center pt-2 border-t border-slate-800/80">
+          <div className="grid grid-cols-2 gap-3 w-full text-center pt-2 border-t border-white/10 font-mono">
             <div>
-              <span className="text-[10px] text-slate-500 uppercase">Injury Probability</span>
-              <p className={`text-sm font-bold ${result.color}`}>{result.injuryProbability}</p>
+              <span className="text-[10px] text-neutral-500 uppercase">Shoulder Tendinopathy Risk</span>
+              <p className="text-sm font-bold text-white">{result.injuryProbability}</p>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 uppercase">Training Phase</span>
-              <p className="text-sm font-bold text-slate-200">
-                {result.riskZone === 'optimal' ? 'Progressive Overload' : 'Spike Alert'}
+              <span className="text-[10px] text-neutral-500 uppercase">Training Phase</span>
+              <p className="text-sm font-bold text-white">
+                {result.riskZone === 'optimal' ? 'Conditioning Sweet Spot' : result.riskZone === 'undertrained' ? 'Sub-Threshold' : 'Volume Spike Alert'}
               </p>
             </div>
           </div>
@@ -95,51 +121,57 @@ export const InjuryRiskGauge: React.FC = () => {
         <div className="space-y-4">
           <div className="space-y-3">
             <div>
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
-                <span>Recent 7-Day Acute Load (Meters / Volume):</span>
-                <span className="font-mono text-cyan-400 font-bold">
+              <div className="flex justify-between text-xs text-neutral-400 mb-1">
+                <span>Recent 7-Day Acute Volume:</span>
+                <span className="font-mono text-white font-bold">
                   {acuteMeters.toLocaleString()} m
                 </span>
               </div>
               <input
                 type="range"
-                min="10000"
+                min="0"
                 max="75000"
-                step="1000"
+                step="500"
                 value={acuteMeters}
-                onChange={(e) => setAcuteMeters(Number(e.target.value))}
-                className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                onChange={(e) => {
+                  setUseJournalData(false)
+                  setAcuteMeters(Number(e.target.value))
+                }}
+                className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <div className="flex justify-between text-xs text-neutral-400 mb-1">
                 <span>Chronic 28-Day Average Weekly Baseline:</span>
-                <span className="font-mono text-slate-300 font-bold">
+                <span className="font-mono text-white font-bold">
                   {chronicMeters.toLocaleString()} m
                 </span>
               </div>
               <input
                 type="range"
-                min="10000"
+                min="0"
                 max="75000"
-                step="1000"
+                step="500"
                 value={chronicMeters}
-                onChange={(e) => setChronicMeters(Number(e.target.value))}
-                className="w-full accent-slate-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                onChange={(e) => {
+                  setUseJournalData(false)
+                  setChronicMeters(Number(e.target.value))
+                }}
+                className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
               />
             </div>
           </div>
 
-          {/* Coaching Advice */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+          {/* Sports Science Advice */}
+          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-2">
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Sports Science Recommendation:
+              <Info className="w-4 h-4 text-white" />
+              <span className="text-xs font-bold uppercase tracking-wider text-white">
+                Gabbett Biomechanical Directives:
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs text-neutral-300 leading-relaxed font-sans">
               {result.coachingRecommendation}
             </p>
           </div>
