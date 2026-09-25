@@ -2,20 +2,26 @@ export interface SwimKinematicsResult {
   velocityMps: number
   pacePer100mSec: number
   strokeRateSpm: number // strokes per minute
-  distancePerStrokeMeters: number // DPS
+  distancePerStrokeMeters: number // Raw DPS
+  cleanDpsMeters: number // True surface DPS after underwater breakout subtraction
+  strokeIndexM2s: number // Gold standard Stroke Index (v * DPS) in m^2/s (Costill et al.)
   swolf: number // strokes + seconds per 50m
   efficiencyRating: 'world_class' | 'elite' | 'club_competitive' | 'developing'
   efficiencyLabel: string
   color: string
+  idcMode?: 'catch_up' | 'opposition' | 'superposition' // Index of Coordination (Chollet et al.)
+  idcDescription?: string
 }
 
 /**
- * Calculates competitive swimming kinematics from pool length, split time, and stroke count
+ * Calculates competitive swimming kinematics from pool length, split time, and stroke count.
+ * Enhanced with Olympic underwater breakout distance subtraction and Stroke Index (Costill et al., 1985).
  */
 export function calculateStrokeMetrics(
   distanceMeters: number,
   timeSeconds: number,
-  strokeCount: number
+  strokeCount: number,
+  underwaterBreakoutMeters: number = 0
 ): SwimKinematicsResult {
   if (distanceMeters <= 0 || timeSeconds <= 0 || strokeCount <= 0) {
     return {
@@ -23,6 +29,8 @@ export function calculateStrokeMetrics(
       pacePer100mSec: 0,
       strokeRateSpm: 0,
       distancePerStrokeMeters: 0,
+      cleanDpsMeters: 0,
+      strokeIndexM2s: 0,
       swolf: 0,
       efficiencyRating: 'developing',
       efficiencyLabel: 'Invalid Inputs',
@@ -36,12 +44,31 @@ export function calculateStrokeMetrics(
   // Pace per 100m in seconds
   const pacePer100mSec = Math.round((timeSeconds / distanceMeters) * 100 * 10) / 10
 
-  // Distance Per Stroke (DPS) in meters
+  // Raw Distance Per Stroke (DPS) in meters
   const distancePerStrokeMeters =
     Math.round((distanceMeters / strokeCount) * 100) / 100
 
+  // True Surface Clean Distance Per Stroke (subtracting underwater glide breakout)
+  const cleanDistance = Math.max(1, distanceMeters - underwaterBreakoutMeters)
+  const cleanDpsMeters = Math.round((cleanDistance / strokeCount) * 100) / 100
+
   // Stroke Rate (strokes per minute) = (strokes / seconds) * 60
   const strokeRateSpm = Math.round((strokeCount / timeSeconds) * 60 * 10) / 10
+
+  // Stroke Index (SI) = Velocity * Clean DPS (units: m^2/s)
+  // Highly correlated with VO2 max efficiency and aerobic economy (Costill et al.)
+  const strokeIndexM2s = Math.round(velocityMps * cleanDpsMeters * 100) / 100
+
+  // Index of Coordination (IdC) estimation based on stroke rate and velocity
+  let idcMode: SwimKinematicsResult['idcMode'] = 'opposition'
+  let idcDescription = 'Opposition Mode (IdC ≈ 0%): Propulsive phases alternate continuously without lag.'
+  if (strokeRateSpm < 38) {
+    idcMode = 'catch_up'
+    idcDescription = 'Catch-up Mode (IdC < 0%): Glide latency between arm propulsions. Common in distance/recovery.'
+  } else if (strokeRateSpm > 48) {
+    idcMode = 'superposition'
+    idcDescription = 'Superposition Mode (IdC > 0%): Overlapping propulsive forces. Maximizes peak sprint power.'
+  }
 
   // SWOLF for 50m normalized: (Time for 50m) + (Strokes for 50m)
   const normalized50mTime = (timeSeconds / distanceMeters) * 50
@@ -71,10 +98,14 @@ export function calculateStrokeMetrics(
     pacePer100mSec,
     strokeRateSpm,
     distancePerStrokeMeters,
+    cleanDpsMeters,
+    strokeIndexM2s,
     swolf,
     efficiencyRating,
     efficiencyLabel,
     color,
+    idcMode,
+    idcDescription,
   }
 }
 

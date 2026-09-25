@@ -5,10 +5,15 @@ import { Play, Pause, RotateCcw, CheckCircle, Sparkles, Volume2 } from 'lucide-r
 
 export const SMRRoutineGuide: React.FC = () => {
   const [selectedProtocol, setSelectedProtocol] = useState<SMRProtocol>(SMR_PROTOCOLS[0])
-  const [timeLeft, setTimeLeft] = useState<number>(selectedProtocol.durationSec)
+  const [smrMode, setSmrMode] = useState<'pre_swim' | 'post_swim'>('pre_swim')
+  const [timeLeft, setTimeLeft] = useState<number>(SMR_PROTOCOLS[0].preSwimDurationSec || 25)
   const [isRunning, setIsRunning] = useState<boolean>(false)
   const [completedProtocols, setCompletedProtocols] = useState<string[]>([])
   const [contractRelaxPhase, setContractRelaxPhase] = useState<'contract' | 'relax'>('relax')
+
+  const getTargetDuration = (protocol: SMRProtocol, mode: 'pre_swim' | 'post_swim') => {
+    return mode === 'pre_swim' ? (protocol.preSwimDurationSec || 25) : protocol.durationSec
+  }
 
   const playBeep = (freq = 440, durationMs = 150) => {
     try {
@@ -30,7 +35,13 @@ export const SMRRoutineGuide: React.FC = () => {
 
   const handleSelectProtocol = (protocol: SMRProtocol) => {
     setSelectedProtocol(protocol)
-    setTimeLeft(protocol.durationSec)
+    setTimeLeft(getTargetDuration(protocol, smrMode))
+    setIsRunning(false)
+  }
+
+  const handleSwitchMode = (mode: 'pre_swim' | 'post_swim') => {
+    setSmrMode(mode)
+    setTimeLeft(getTargetDuration(selectedProtocol, mode))
     setIsRunning(false)
   }
 
@@ -102,6 +113,30 @@ export const SMRRoutineGuide: React.FC = () => {
         </div>
       </div>
 
+      {/* Mode Selector */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 bg-black p-1.5 rounded-xl border border-white/20 font-mono">
+        <button
+          onClick={() => handleSwitchMode('pre_swim')}
+          className={`w-full sm:flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+            smrMode === 'pre_swim'
+              ? 'bg-white text-black'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          Pre-Swim Tack & Floss (25s Dynamic)
+        </button>
+        <button
+          onClick={() => handleSwitchMode('post_swim')}
+          className={`w-full sm:flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+            smrMode === 'post_swim'
+              ? 'bg-white text-black'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          Post-Swim Recovery (60-90s Ischemic GTO Hold)
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Protocol Selector List (Left Col) */}
         <div className="lg:col-span-4 space-y-2.5">
@@ -112,6 +147,7 @@ export const SMRRoutineGuide: React.FC = () => {
             {SMR_PROTOCOLS.map((p) => {
               const isSelected = selectedProtocol.id === p.id
               const isDone = completedProtocols.includes(p.id)
+              const duration = smrMode === 'pre_swim' ? (p.preSwimDurationSec || 25) : p.durationSec
               return (
                 <button
                   key={p.id}
@@ -129,7 +165,7 @@ export const SMRRoutineGuide: React.FC = () => {
                       <span className="px-1.5 py-0.5 rounded bg-black border border-white/15 text-white">
                         {p.equipment}
                       </span>
-                      <span>{p.durationSec}s</span>
+                      <span>{duration}s</span>
                     </div>
                   </div>
                   {isDone ? (
@@ -149,7 +185,7 @@ export const SMRRoutineGuide: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                ACTIVE PROTOCOL
+                ACTIVE PROTOCOL • {smrMode === 'pre_swim' ? 'PRE-SWIM DYNAMIC' : 'POST-SWIM RESTORATIVE'}
               </span>
               <h3 className="text-2xl font-bold text-white tracking-tight">{selectedProtocol.name}</h3>
               <p className="text-xs text-neutral-400 mt-0.5">
@@ -162,6 +198,19 @@ export const SMRRoutineGuide: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Pre-Swim Tack-and-Floss Action Notice */}
+          {smrMode === 'pre_swim' && selectedProtocol.tackAndFlossAction && (
+            <div className="p-4 rounded-xl bg-black border border-white/20 space-y-1">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white flex items-center gap-1.5 font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                Active Tack & Floss Movement:
+              </span>
+              <p className="text-xs text-white leading-relaxed">
+                {selectedProtocol.tackAndFlossAction}
+              </p>
+            </div>
+          )}
 
           {/* Timer Display */}
           <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">

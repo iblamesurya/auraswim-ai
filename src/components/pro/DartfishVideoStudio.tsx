@@ -26,6 +26,17 @@ export const DartfishVideoStudio: React.FC = () => {
   const [calculatedSpm, setCalculatedSpm] = useState<number | null>(null)
   const [tapInstruction, setTapInstruction] = useState('Tap 3 times on consecutive hand entries')
 
+  // Independent Track B Slip / Offset (for locking hand entries between two clips)
+  const [trackBOffsetFrames, setTrackBOffsetFrames] = useState<number>(0)
+
+  const nudgeTrackB = (frames: number) => {
+    setTrackBOffsetFrames((prev) => prev + frames)
+    if (videoBRef.current) {
+      const delta = (1 / 30) * frames
+      videoBRef.current.currentTime = Math.max(0, videoBRef.current.currentTime + delta)
+    }
+  }
+
   // Angle Caliper Overlay State
   const [caliperPoints, setCaliperPoints] = useState<Array<{ x: number; y: number }>>([])
   const [measuredAngle, setMeasuredAngle] = useState<number | null>(null)
@@ -391,6 +402,50 @@ export const DartfishVideoStudio: React.FC = () => {
                 </button>
               ))}
             </div>
+
+            {/* Independent Track B Sync Slip (Biomechanic Hand Entry Lock) */}
+            {splitViewMode === 'side-by-side' && (
+              <div className="pt-2 border-t border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                  <span>Track B Slip (Lock Hand Entry):</span>
+                  <span className="text-white font-bold">
+                    {trackBOffsetFrames > 0 ? `+${trackBOffsetFrames}` : trackBOffsetFrames} Frames
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono">
+                  <button
+                    onClick={() => nudgeTrackB(-5)}
+                    className="px-2 py-1 rounded bg-black border border-white/20 text-xs text-neutral-300 hover:text-white"
+                  >
+                    -5 Fr
+                  </button>
+                  <button
+                    onClick={() => nudgeTrackB(-1)}
+                    className="px-2 py-1 rounded bg-black border border-white/20 text-xs text-neutral-300 hover:text-white"
+                  >
+                    -1 Fr
+                  </button>
+                  <button
+                    onClick={() => setTrackBOffsetFrames(0)}
+                    className="px-2 py-1 rounded bg-black border border-white/15 text-xs text-neutral-400 hover:text-white"
+                  >
+                    Reset Slip
+                  </button>
+                  <button
+                    onClick={() => nudgeTrackB(1)}
+                    className="px-2 py-1 rounded bg-black border border-white/20 text-xs text-neutral-300 hover:text-white"
+                  >
+                    +1 Fr
+                  </button>
+                  <button
+                    onClick={() => nudgeTrackB(5)}
+                    className="px-2 py-1 rounded bg-black border border-white/20 text-xs text-neutral-300 hover:text-white"
+                  >
+                    +5 Fr
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 3-Stroke Cadence Tap Counter (Deck Tool) */}

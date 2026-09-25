@@ -14,6 +14,8 @@ export interface ParsedSetItem {
   interval?: string
   energyZone: 'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3'
   notes?: string
+  equipment?: string
+  mechanicalStrainAU?: number
 }
 
 export interface WorkoutAnalysis {
@@ -24,6 +26,10 @@ export interface WorkoutAnalysis {
   zoneMeters: Record<'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3', number>
   zonePercentages: Record<'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3', number>
   primaryFocusZone: 'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3'
+  // Olympic enhancements
+  totalMechanicalStrainAU: number
+  hasHighTorquePaddles: boolean
+  gearTagsDetected: string[]
 }
 
 export const ENERGY_ZONE_DEFINITIONS = {
@@ -71,12 +77,71 @@ export const ENERGY_ZONE_DEFINITIONS = {
   },
 }
 
-export function parseCommitWorkout(workoutText: string): WorkoutAnalysis {
-  const lines = workoutText.split('\n')
+/**
+ * Pre-processes nested repetition bracket blocks: e.g. 3x [ 4x100 @ 1:15 + 2x50 @ :45 ]
+ */
+function expandNestedSets(text: string): string[] {
+  const resultLines: string[] = []
+  const lines = text.split('\n')
+
+  let insideBracket = false
+  let bracketMultiplier = 1
+  let bracketLines: string[] = []
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    // Detect start of bracket block: e.g. 3x [ or 3* [ or 2x {
+    const blockStartMatch = trimmed.match(/^(\d+)\s*[*xX]\s*[[{](.*)$/)
+    if (blockStartMatch) {
+      insideBracket = true
+      bracketMultiplier = parseInt(blockStartMatch[1], 10)
+      bracketLines = []
+      const rest = blockStartMatch[2].replace(/[\]}]$/, '').trim()
+      if (rest) bracketLines.push(rest)
+      if (trimmed.includes(']') || trimmed.includes('}')) {
+        // Single line closed block
+        insideBracket = false
+        for (let m = 0; m < bracketMultiplier; m++) {
+          bracketLines.forEach((bl) => resultLines.push(bl))
+        }
+      }
+      continue
+    }
+
+    if (insideBracket) {
+      if (trimmed.includes(']') || trimmed.includes('}')) {
+        const clean = trimmed.replace(/[\]}]/, '').trim()
+        if (clean) bracketLines.push(clean)
+        insideBracket = false
+        for (let m = 0; m < bracketMultiplier; m++) {
+          bracketLines.forEach((bl) => resultLines.push(bl))
+        }
+      } else {
+        bracketLines.push(trimmed)
+      }
+      continue
+    }
+
+    resultLines.push(trimmed)
+  }
+
+  return resultLines
+}
+
+export function parseCommitWorkout(
+  workoutText: string,
+  swimmerCssSecPer100: number = 72
+): WorkoutAnalysis {
+  const expandedLines = expandNestedSets(workoutText)
   const items: ParsedSetItem[] = []
 
   let totalDistance = 0
   let totalSeconds = 0
+  let totalMechanicalStrainAU = 0
+  let hasHighTorquePaddles = false
+  const gearTagsSet = new Set<string>()
 
   const zoneMeters: Record<'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3', number> = {
     EN1: 0,
@@ -87,7 +152,7 @@ export function parseCommitWorkout(workoutText: string): WorkoutAnalysis {
     SP3: 0,
   }
 
-  lines.forEach((rawLine, idx) => {
+  expandedLines.forEach((rawLine, idx) => {
     const trimmed = rawLine.trim()
     if (!trimmed || trimmed.startsWith('#') || trimmed.endsWith(':')) return
 
@@ -112,48 +177,106 @@ export function parseCommitWorkout(workoutText: string): WorkoutAnalysis {
     const setTotal = reps * distancePerRep
     totalDistance += setTotal
 
-    // 3. Extract Energy Zone
-    let energyZone: 'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3' = 'EN2' // Default aerobic threshold
+    // 3. Extract Stroke
+    let stroke = 'Freestyle'
+    let strokeFactor = 1.0
+    if (trimmed.match(/\b(fly|butterfly)\b/i)) {
+      stroke = 'Butterfly'
+      strokeFactor = 1.6
+    } else if (trimmed.match(/\b(back|backstroke)\b/i)) {
+      stroke = 'Backstroke'
+      strokeFactor = 1.1
+    } else if (trimmed.match(/\b(breast|breaststroke)\b/i)) {
+      stroke = 'Breaststroke'
+      strokeFactor = 1.2
+    } else if (trimmed.match(/\b(im|medley)\b/i)) {
+      stroke = 'Individual Medley'
+      strokeFactor = 1.3
+    } else if (trimmed.match(/\b(kick)\b/i)) {
+      stroke = 'Kick'
+      strokeFactor = 0.5
+    } else if (trimmed.match(/\b(drill)\b/i)) {
+      stroke = 'Technique Drill'
+      strokeFactor = 0.8
+    } else if (trimmed.match(/\b(pull)\b/i)) {
+      stroke = 'Pull with Buoy'
+      strokeFactor = 1.15
+    }
+
+    // 4. Equipment Detection & Torque Factor
+    let equipment = 'None'
+    let gearFactor = 1.0
+    if (trimmed.match(/\b(paddle|paddles|pads)\b/i)) {
+      equipment = 'Paddles'
+      gearFactor = 1.35
+      hasHighTorquePaddles = true
+      gearTagsSet.add('Paddles')
+    } else if (trimmed.match(/\b(fin|fins)\b/i)) {
+      equipment = 'Fins'
+      gearFactor = 0.85
+      gearTagsSet.add('Fins')
+    } else if (trimmed.match(/\b(chute|drag)\b/i)) {
+      equipment = 'Drag Chute'
+      gearFactor = 1.4
+      gearTagsSet.add('Drag Chute')
+    } else if (trimmed.match(/\b(snorkel)\b/i)) {
+      equipment = 'Snorkel'
+      gearFactor = 0.95
+      gearTagsSet.add('Snorkel')
+    }
+
+    // 5. Extract Interval
+    let intervalStr: string | undefined = undefined
+    let intervalSecondsPerRep = 0
+    const intervalMatch = trimmed.match(/(?:on|@|interval)\s*:?(\d+:?\d+)/i)
+    if (intervalMatch) {
+      intervalStr = intervalMatch[1]
+      const parts = intervalStr.split(':')
+      if (parts.length === 2) {
+        intervalSecondsPerRep = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)
+      } else {
+        intervalSecondsPerRep = parseInt(parts[0], 10)
+      }
+      totalSeconds += intervalSecondsPerRep * reps
+    } else {
+      intervalSecondsPerRep = Math.round((distancePerRep / 100) * 85)
+      totalSeconds += intervalSecondsPerRep * reps
+    }
+
+    // 6. Extract / Compute Energy Zone (Using explicit tags or CSS comparison)
+    let energyZone: 'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3' = 'EN2'
     const zoneMatch = trimmed.match(/\b(EN1|EN2|EN3|SP1|SP2|SP3)\b/i)
     if (zoneMatch) {
       energyZone = zoneMatch[1].toUpperCase() as typeof energyZone
     } else if (trimmed.toLowerCase().includes('warm') || trimmed.toLowerCase().includes('cool') || trimmed.toLowerCase().includes('easy') || trimmed.toLowerCase().includes('recovery')) {
       energyZone = 'EN1'
-    } else if (trimmed.toLowerCase().includes('sprint') || trimmed.toLowerCase().includes('fast') || trimmed.toLowerCase().includes('burst')) {
+    } else if (trimmed.toLowerCase().includes('sprint') || trimmed.toLowerCase().includes('fast') || trimmed.toLowerCase().includes('burst') || trimmed.toLowerCase().includes('alactic')) {
       energyZone = 'SP1'
     } else if (trimmed.toLowerCase().includes('threshold') || trimmed.toLowerCase().includes('pace')) {
       energyZone = 'EN2'
+    } else if (intervalSecondsPerRep > 0 && distancePerRep > 0 && swimmerCssSecPer100 > 0) {
+      // Dynamic CSS Pace Evaluation
+      const pacePer100 = (intervalSecondsPerRep / distancePerRep) * 100
+      if (pacePer100 <= swimmerCssSecPer100 - 3) energyZone = 'SP1'
+      else if (pacePer100 <= swimmerCssSecPer100 + 2) energyZone = 'EN3'
+      else if (pacePer100 <= swimmerCssSecPer100 + 7) energyZone = 'EN2'
+      else energyZone = 'EN1'
     }
 
     zoneMeters[energyZone] += setTotal
 
-    // 4. Extract Stroke
-    let stroke = 'Freestyle'
-    if (trimmed.match(/\b(fly|butterfly)\b/i)) stroke = 'Butterfly'
-    else if (trimmed.match(/\b(back|backstroke)\b/i)) stroke = 'Backstroke'
-    else if (trimmed.match(/\b(breast|breaststroke)\b/i)) stroke = 'Breaststroke'
-    else if (trimmed.match(/\b(im|medley)\b/i)) stroke = 'Individual Medley'
-    else if (trimmed.match(/\b(kick)\b/i)) stroke = 'Kick'
-    else if (trimmed.match(/\b(drill)\b/i)) stroke = 'Technique Drill'
-    else if (trimmed.match(/\b(pull)\b/i)) stroke = 'Pull with Buoy'
-
-    // 5. Extract Interval
-    let intervalStr: string | undefined = undefined
-    const intervalMatch = trimmed.match(/(?:on|@|interval)\s*:?(\d+:?\d+)/i)
-    if (intervalMatch) {
-      intervalStr = intervalMatch[1]
-      const parts = intervalStr.split(':')
-      let sec = 0
-      if (parts.length === 2) {
-        sec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)
-      } else {
-        sec = parseInt(parts[0], 10)
-      }
-      totalSeconds += sec * reps
-    } else {
-      // Default estimate based on distance: ~1:25 per 100m
-      totalSeconds += Math.round((distancePerRep / 100) * 85) * reps
+    // Mechanical Strain in Arbitrary Units (Foster TRIMP + Biomechanical Torque)
+    const rpeMap: Record<'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3', number> = {
+      SP3: 10.0,
+      SP2: 9.5,
+      SP1: 8.5,
+      EN3: 7.5,
+      EN2: 6.5,
+      EN1: 4.0,
     }
+    const rpeEstimate = rpeMap[energyZone as 'EN1' | 'EN2' | 'EN3' | 'SP1' | 'SP2' | 'SP3'] ?? 6.0
+    const setStrain = Math.round((setTotal / 100) * rpeEstimate * strokeFactor * gearFactor)
+    totalMechanicalStrainAU += setStrain
 
     items.push({
       id: `set-${idx}`,
@@ -164,6 +287,8 @@ export function parseCommitWorkout(workoutText: string): WorkoutAnalysis {
       stroke,
       interval: intervalStr,
       energyZone,
+      equipment: equipment !== 'None' ? equipment : undefined,
+      mechanicalStrainAU: setStrain,
     })
   })
 
@@ -198,5 +323,8 @@ export function parseCommitWorkout(workoutText: string): WorkoutAnalysis {
     zoneMeters,
     zonePercentages,
     primaryFocusZone,
+    totalMechanicalStrainAU,
+    hasHighTorquePaddles,
+    gearTagsDetected: Array.from(gearTagsSet),
   }
 }

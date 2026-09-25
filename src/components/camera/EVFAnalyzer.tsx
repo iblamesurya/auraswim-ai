@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { calculateEarlyVerticalForearm } from '../../lib/biomechanics/angleCalculators'
+import { calculateEVF3D } from '../../lib/biomechanics/angleCalculators'
 import type { Point2D } from '../../lib/biomechanics/angleCalculators'
-import { Sparkles, Sliders, Upload, Info } from 'lucide-react'
+import { Sparkles, Sliders, Upload, Info, Compass } from 'lucide-react'
 
 export const EVFAnalyzer: React.FC = () => {
   const [elbowY, setElbowY] = useState(130)
+  const [torsoRoll, setTorsoRoll] = useState(35) // 35° is standard Olympic body roll angle
   const [videoFile, setVideoFile] = useState<string | null>(null)
 
   // Standard coordinates: Shoulder -> Elbow -> Wrist
@@ -12,7 +13,7 @@ export const EVFAnalyzer: React.FC = () => {
   const elbow: Point2D = { x: 160, y: elbowY }
   const wrist: Point2D = { x: 240, y: 190 }
 
-  const evfResult = calculateEarlyVerticalForearm(shoulder, elbow, wrist)
+  const evf3DResult = calculateEVF3D(shoulder, elbow, wrist, torsoRoll)
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -28,10 +29,10 @@ export const EVFAnalyzer: React.FC = () => {
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
             <Sparkles className="w-5 h-5 text-white" />
-            Early Vertical Forearm (EVF) Catch Analyzer
+            Early Vertical Forearm (EVF) 3D Catch Analyzer
           </h3>
           <p className="text-xs text-neutral-400">
-            Measures elbow catch angle ($\angle$ Shoulder - Elbow - Wrist). Optimal range is 100° - 125°.
+            Measures elbow catch angle with Dr. Rod Havriluk (Aquanex) 3D torso roll perspective compensation.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -50,7 +51,7 @@ export const EVFAnalyzer: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         {/* Visual Skeleton View / Video */}
-        <div className="relative bg-black rounded-xl border border-white/10 p-4 flex flex-col items-center justify-center min-h-[300px] overflow-hidden">
+        <div className="relative bg-black rounded-xl border border-white/10 p-4 flex flex-col items-center justify-center min-h-[320px] overflow-hidden">
           {videoFile ? (
             <video
               src={videoFile}
@@ -98,36 +99,67 @@ export const EVFAnalyzer: React.FC = () => {
             </svg>
           )}
 
-          {/* Measured Catch Angle Badge */}
-          <div className="absolute top-4 right-4 bg-neutral-900 border border-white/20 px-3 py-1.5 rounded-lg text-center font-mono">
-            <span className="text-[10px] text-neutral-400 block uppercase">Catch Angle</span>
-            <span className="text-xl font-extrabold text-white">
-              {evfResult.angle}°
-            </span>
+          {/* Measured Catch Angle Badges (2D vs 3D Corrected) */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2 font-mono text-right">
+            <div className="bg-neutral-900 border border-white/20 px-3 py-1.5 rounded-lg text-center">
+              <span className="text-[10px] text-neutral-400 block uppercase">3D Catch Angle</span>
+              <span className="text-xl font-extrabold text-white">
+                {evf3DResult.corrected3dAngle}°
+              </span>
+            </div>
+            <div className="bg-black border border-white/10 px-2 py-0.5 rounded text-[10px] text-neutral-400">
+              Raw 2D: {evf3DResult.raw2dAngle}° (Roll: {torsoRoll}°)
+            </div>
           </div>
         </div>
 
-        {/* Diagnosis & Adjustment Slider */}
+        {/* Diagnosis & Adjustment Sliders */}
         <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-neutral-400 font-mono">
-              <span className="flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5" />
-                Adjust Elbow Depth (Simulation):
-              </span>
-              <span className="font-bold text-white">{evfResult.angle}°</span>
+          <div className="space-y-3 p-4 rounded-xl bg-black border border-white/10">
+            {/* Elbow Depth Slider */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-neutral-300 font-mono">
+                <span className="flex items-center gap-1">
+                  <Sliders className="w-3.5 h-3.5" />
+                  Elbow Catch Depth:
+                </span>
+                <span className="font-bold text-white">{evf3DResult.raw2dAngle}°</span>
+              </div>
+              <input
+                type="range"
+                min="90"
+                max="165"
+                value={elbowY}
+                onChange={(e) => setElbowY(Number(e.target.value))}
+                className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
+              />
+              <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
+                <span>High Elbow (~110°)</span>
+                <span>Dropped Elbow (~150°)</span>
+              </div>
             </div>
-            <input
-              type="range"
-              min="90"
-              max="165"
-              value={elbowY}
-              onChange={(e) => setElbowY(Number(e.target.value))}
-              className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
-            />
-            <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
-              <span>High Elbow (EVF Locked ~110°)</span>
-              <span>Dropped Elbow (~150°)</span>
+
+            {/* Torso Roll Angle Slider */}
+            <div className="space-y-1.5 pt-2 border-t border-white/10">
+              <div className="flex justify-between text-xs text-neutral-300 font-mono">
+                <span className="flex items-center gap-1">
+                  <Compass className="w-3.5 h-3.5" />
+                  Body Roll Angle ($\phi$):
+                </span>
+                <span className="font-bold text-white">{torsoRoll}°</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={torsoRoll}
+                onChange={(e) => setTorsoRoll(Number(e.target.value))}
+                className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
+              />
+              <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
+                <span>Flat Torso (0°)</span>
+                <span>Olympic Roll (40°-45°)</span>
+              </div>
             </div>
           </div>
 
@@ -139,7 +171,7 @@ export const EVFAnalyzer: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-neutral-300 leading-relaxed font-sans">
-              {evfResult.feedback}
+              {evf3DResult.feedback}
             </p>
           </div>
         </div>

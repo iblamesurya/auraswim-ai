@@ -4,6 +4,8 @@ import {
   calculateEarlyVerticalForearm,
   calculateStreamlineFlexion,
   calculateBilateralAsymmetry,
+  calculateStreamlineWithLumbarCompensation,
+  calculateEVF3D,
 } from '../lib/biomechanics/angleCalculators'
 
 describe('angleCalculators', () => {
@@ -48,6 +50,37 @@ describe('angleCalculators', () => {
     expect(result.angle).toBe(180)
     expect(result.status).toBe('excellent')
     expect(result.alignmentScore).toBe(100)
+  })
+
+  it('detects compensatory lumbar hyperextension in 4-point streamline test', () => {
+    // Ankle, Hip, Lumbar, Shoulder, Wrist
+    // Arched lumbar point at x = 180 (30px offset from plumb line x = 150)
+    const result = calculateStreamlineWithLumbarCompensation({
+      ankle: { x: 150, y: 340 },
+      hip: { x: 150, y: 260 },
+      lumbar: { x: 180, y: 215 },
+      shoulder: { x: 150, y: 170 },
+      wrist: { x: 150, y: 30 },
+    })
+
+    expect(result.hasLumbarCheat).toBe(true)
+    expect(result.status).toBe('lumbar_compensated')
+    expect(result.passiveDragPenaltyMultiplier).toBeGreaterThan(1.2)
+  })
+
+  it('compensates EVF catch angle for 3D torso roll perspective foreshortening', () => {
+    const shoulder = { x: 70, y: 110 }
+    const elbow = { x: 160, y: 130 }
+    const wrist = { x: 240, y: 190 }
+
+    // 0 deg roll vs 40 deg roll
+    const res0 = calculateEVF3D(shoulder, elbow, wrist, 0)
+    const res40 = calculateEVF3D(shoulder, elbow, wrist, 40)
+
+    expect(res0.torsoRollDeg).toBe(0)
+    expect(res40.torsoRollDeg).toBe(40)
+    // 3D corrected angle should account for perspective foreshortening
+    expect(res40.corrected3dAngle).toBeLessThanOrEqual(res0.corrected3dAngle)
   })
 
   it('calculates bilateral asymmetry accurately', () => {

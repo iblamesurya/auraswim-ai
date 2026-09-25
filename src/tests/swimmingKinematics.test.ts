@@ -36,4 +36,16 @@ describe('swimmingKinematics', () => {
     expect(pacing.targetStrokeRateSpm).toBeGreaterThan(40)
     expect(pacing.pacingStrategy).toContain('Controlled First 50m')
   })
+
+  it('subtracts underwater breakout distance to compute true surface DPS and Stroke Index', () => {
+    // 50m pool, 30s split, 30 strokes, with 10m underwater breakout glide
+    // Clean distance = 50 - 10 = 40m
+    // Clean DPS = 40 / 30 = 1.33m (Raw was 50 / 30 = 1.67m)
+    const metrics = calculateStrokeMetrics(50, 30, 30, 10)
+    expect(metrics.cleanDpsMeters).toBeCloseTo(1.33, 2)
+    expect(metrics.distancePerStrokeMeters).toBeCloseTo(1.67, 2)
+    // Stroke Index (SI) = velocity (1.67) * clean DPS (1.33) ≈ 2.22 m²/s
+    expect(metrics.strokeIndexM2s).toBeGreaterThan(2.0)
+    expect(metrics.idcMode).toBeDefined()
+  })
 })

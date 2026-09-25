@@ -76,4 +76,27 @@ describe('Commit Swimming Workout Syntax Parser', () => {
     expect(ENERGY_ZONE_DEFINITIONS.SP2.lactate).toBe('> 9.0 mmol/L')
     expect(ENERGY_ZONE_DEFINITIONS.SP3.purpose).toContain('breakout')
   })
+
+  it('correctly expands nested bracket repetition loops', () => {
+    const workoutText = `
+      2x [
+        4x100 Freestyle on 1:15 EN2
+        2x50 Butterfly on :45 SP1
+      ]
+    `
+    const result = parseCommitWorkout(workoutText)
+    // 2 * (400 + 100) = 1000m
+    expect(result.totalDistance).toBe(1000)
+    expect(result.itemCount).toBe(4) // 2 iterations of 2 lines
+  })
+
+  it('detects high-torque paddles and calculates mechanical strain AU', () => {
+    const workoutText = `
+      10x100 Freestyle on 1:20 w/ paddles
+    `
+    const result = parseCommitWorkout(workoutText)
+    expect(result.hasHighTorquePaddles).toBe(true)
+    expect(result.gearTagsDetected).toContain('Paddles')
+    expect(result.totalMechanicalStrainAU).toBeGreaterThan(0)
+  })
 })

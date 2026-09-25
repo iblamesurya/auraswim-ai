@@ -11,6 +11,9 @@ export interface SMRProtocol {
   stepByStep: string[]
   visualTip: string
   warning: string
+  // Olympic enhancements
+  tackAndFlossAction?: string
+  preSwimDurationSec?: number
 }
 
 export const SMR_PROTOCOLS: SMRProtocol[] = [
@@ -21,7 +24,9 @@ export const SMR_PROTOCOLS: SMRProtocol[] = [
     equipment: 'Lacrosse Ball',
     durationSec: 60,
     prepTimeSec: 5,
+    preSwimDurationSec: 25,
     category: 'upper_body',
+    tackAndFlossAction: 'Pin ball below collarbone; actively sweep arm up and back into streamline 10 times to floss fascial sliding surfaces.',
     importanceForSwimmer:
       'Shown in sports science to be significantly shorter in swimmers with shoulder pain. Releasing it stops the shoulders from slouching forward, preventing subacromial impingement during the catch and high-elbow recovery.',
     contractRelaxTechnique:
@@ -43,7 +48,9 @@ export const SMR_PROTOCOLS: SMRProtocol[] = [
     equipment: 'Fingers / Hands',
     durationSec: 60,
     prepTimeSec: 5,
+    preSwimDurationSec: 25,
     category: 'upper_body',
+    tackAndFlossAction: 'Hook thumb into deep armpit pit; actively rotate arm between internal catch and external recovery 8 times.',
     importanceForSwimmer:
       'The deepest rotator cuff muscle on the anterior surface of the scapula. It powers internal rotation during every single pull phase and gets chronically overworked and tight.',
     contractRelaxTechnique:
@@ -59,13 +66,61 @@ export const SMR_PROTOCOLS: SMRProtocol[] = [
     warning: 'Avoid sharp nerve sensations. It should feel like a deep muscle knot release.',
   },
   {
+    id: 'latissimus-dorsi',
+    name: 'Latissimus Dorsi & Teres Major Flank Release',
+    targetMuscle: 'Latissimus Dorsi Insertion & Lateral Scapular Border',
+    equipment: 'Foam Roller',
+    durationSec: 60,
+    prepTimeSec: 5,
+    preSwimDurationSec: 30,
+    category: 'upper_body',
+    tackAndFlossAction: 'Pin side of ribcage on roller; extend arm fully overhead and oscillate thumb outward (external rotation) to open shoulder socket.',
+    importanceForSwimmer:
+      'The primary propulsion motor in swimming. Chronically tight lats pull the humerus into severe internal rotation and prevent full overhead streamline without lower back arching.',
+    contractRelaxTechnique:
+      'Side-lying over roller with arm overhead. Inhale deeply, contract lat into roller for 4 seconds, exhale and drape ribcage over roller for 8 seconds.',
+    stepByStep: [
+      'Lie on your side with the foam roller perpendicular to your torso, just below the armpit.',
+      'Extend the bottom arm straight overhead with palm facing up.',
+      'Slowly roll 2–3 inches downward along the outer ribcage to locate the tender trigger point in the high lat/teres major.',
+      'Pause and oscillate side to side while performing mini-breaths.',
+    ],
+    visualTip: 'Keep your neck supported by resting your head on a yoga block or arm.',
+    warning: 'Do not roll into the lower floating ribs.',
+  },
+  {
+    id: 'serratus-anterior',
+    name: 'Serratus Anterior & Rib Cage Decompression',
+    targetMuscle: 'Serratus Anterior & Intercostal Fascia',
+    equipment: 'Lacrosse Ball',
+    durationSec: 60,
+    prepTimeSec: 5,
+    preSwimDurationSec: 25,
+    category: 'upper_body',
+    tackAndFlossAction: 'Pin ball against side wall at bra-line; reach arm forward into protraction and then backward into retraction.',
+    importanceForSwimmer:
+      'Crucial for upward scapular rotation. If the serratus is inhibited, the acromion cannot lift as the arm reaches forward, causing the rotator cuff to be pinched during entry.',
+    contractRelaxTechnique:
+      'Lean side into ball against wall. Deep diaphragmatic inhale to expand the ribcage from within, exhale and let the ball sink between ribs.',
+    stepByStep: [
+      'Place a lacrosse ball on the side of your ribs, midway between your armpit and waistline.',
+      'Lean against a smooth wall, applying light to moderate pressure.',
+      'Take 3 deep 360-degree breaths into the ribcage.',
+      'Reach the target arm forward as if reaching for the wall at the end of a stroke.',
+    ],
+    visualTip: 'Gentle pressure is key; this tissue is thin over the ribs.',
+    warning: 'Avoid excessive pressure directly on rib bones.',
+  },
+  {
     id: 'thoracic-spine',
     name: 'Thoracic Spine Extension & Rotation',
     targetMuscle: 'Thoracic Spine (T1-T12) & Erector Spinae',
     equipment: 'Foam Roller',
     durationSec: 90,
     prepTimeSec: 5,
+    preSwimDurationSec: 30,
     category: 'spine',
+    tackAndFlossAction: 'Support head; perform 5 gentle thoracic extensions followed by 5 torso rotations side to side.',
     importanceForSwimmer:
       'Essential for body roll in freestyle and backstroke, high head position in breaststroke breathing, and undulating dolphin kicks. A stiff upper back forces the shoulder joints to over-rotate, creating joint friction.',
     contractRelaxTechnique:
@@ -87,7 +142,9 @@ export const SMR_PROTOCOLS: SMRProtocol[] = [
     equipment: 'Lacrosse Ball',
     durationSec: 60,
     prepTimeSec: 5,
+    preSwimDurationSec: 30,
     category: 'lower_body',
+    tackAndFlossAction: 'Pin ball behind big toe; aggressively curl and splay toes while bearing weight to wake up intrinsic ankle mechanics.',
     importanceForSwimmer:
       'The foundation of flip turn push-offs and block starts. Freeing the plantar fascia increases ankle plantarflexion range of motion, translating directly into faster flutter and dolphin kicks.',
     contractRelaxTechnique:
@@ -109,7 +166,9 @@ export const SMR_PROTOCOLS: SMRProtocol[] = [
     equipment: 'Foam Roller',
     durationSec: 60,
     prepTimeSec: 5,
+    preSwimDurationSec: 30,
     category: 'lower_body',
+    tackAndFlossAction: 'Pin tender calf nodule; perform 10 full circular ankle rolls clockwise and counter-clockwise.',
     importanceForSwimmer:
       'Prevents swimmer toe and foot cramping during intense kick sets and enables explosive ankle snap during dolphin kicks.',
     contractRelaxTechnique:

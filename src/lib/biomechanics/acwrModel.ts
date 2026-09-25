@@ -7,6 +7,12 @@ export interface ACWRResult {
   color: string
   injuryProbability: string
   coachingRecommendation: string
+  // Olympic enhancements
+  ewmaAcute?: number
+  ewmaChronic?: number
+  uncoupledAcwr?: number
+  weekOverWeekChangePercent?: number
+  weeklySpikeAlert?: boolean
 }
 
 /**
@@ -98,7 +104,120 @@ export function calculateSessionRPE(durationMinutes: number, rpeScore1to10: numb
 }
 
 /**
+ * Stroke and Equipment Musculoskeletal Strain Multipliers
+ * Incorporates glenohumeral shear torque factors (Pink et al., 1991; Sein et al., 2010).
+ */
+export const STROKE_STRAIN_MULTIPLIERS: Record<string, number> = {
+  butterfly: 1.6, // High bilateral hyperextension torque
+  breaststroke: 1.2, // Adductor strain & moderate shoulder internal rotation
+  backstroke: 1.1, // Clean recovery angle, moderate rotator cuff load
+  freestyle: 1.0, // Baseline cyclic load
+  im: 1.3, // Mixed stroke distribution
+  kick: 0.5, // Shoulder offloaded
+  pull: 1.15, // Upper body isolation
+}
+
+export const EQUIPMENT_STRAIN_MULTIPLIERS: Record<string, number> = {
+  paddles: 1.35, // Increases propulsive surface area and rotator cuff torque by 35%
+  chute: 1.40, // High passive resistance drag
+  buoy: 1.10, // Upper body pull isolation
+  fins: 0.85, // Offloads upper body, transfers load to ankles/plantar fascia
+  snorkel: 0.95, // Eliminates breathing head-turn cervical torque
+  none: 1.0,
+}
+
+export function calculateMechanicalStrain(params: {
+  volumeMeters: number
+  rpe1to10: number
+  stroke?: string
+  equipment?: string
+}): number {
+  const { volumeMeters, rpe1to10, stroke = 'freestyle', equipment = 'none' } = params
+  const strokeKey = stroke.toLowerCase()
+  const gearKey = equipment.toLowerCase()
+
+  const sMult = STROKE_STRAIN_MULTIPLIERS[strokeKey] || 1.0
+  const gMult = EQUIPMENT_STRAIN_MULTIPLIERS[gearKey] || 1.0
+
+  const baseLoad = (volumeMeters / 100) * (rpe1to10 / 10) * 10
+  return Math.round(baseLoad * sMult * gMult)
+}
+
+/**
+ * Uncoupled Exponentially Weighted Moving Average (EWMA) ACWR
+ * Eliminates the coupling artifact and rolling cliff effect (Gabbett, 2016; Blanch & Gabbett, 2016).
+ * Acute Decay: lambda_a = 2 / (7 + 1) = 0.25 (7 days)
+ * Chronic Decay: lambda_c = 2 / (28 + 1) = 0.0689655 (28 days)
+ */
+export function calculateEWMA_ACWR(dailyLoads: number[]): {
+  ewmaAcute: number
+  ewmaChronic: number
+  uncoupledAcwr: number
+  riskZone: 'undertrained' | 'optimal' | 'elevated_risk' | 'danger_zone'
+  weekOverWeekChangePercent: number
+  weeklySpikeAlert: boolean
+} {
+  if (!dailyLoads || dailyLoads.length === 0) {
+    return {
+      ewmaAcute: 0,
+      ewmaChronic: 0,
+      uncoupledAcwr: 0,
+      riskZone: 'undertrained',
+      weekOverWeekChangePercent: 0,
+      weeklySpikeAlert: false,
+    }
+  }
+
+  const lambdaAcute = 2 / (7 + 1) // 0.25
+  const lambdaChronic = 2 / (28 + 1) // ~0.0689655
+
+  let acuteEWMA = dailyLoads[0]
+  let chronicEWMA = dailyLoads[0]
+
+  for (let i = 1; i < dailyLoads.length; i++) {
+    const load = dailyLoads[i]
+    acuteEWMA = load * lambdaAcute + acuteEWMA * (1 - lambdaAcute)
+    chronicEWMA = load * lambdaChronic + chronicEWMA * (1 - lambdaChronic)
+  }
+
+  const uncoupledAcwr = chronicEWMA > 0 ? Math.round((acuteEWMA / chronicEWMA) * 100) / 100 : 0
+
+  let riskZone: 'undertrained' | 'optimal' | 'elevated_risk' | 'danger_zone' = 'optimal'
+  if (uncoupledAcwr < 0.8) riskZone = 'undertrained'
+  else if (uncoupledAcwr <= 1.3) riskZone = 'optimal'
+  else if (uncoupledAcwr <= 1.5) riskZone = 'elevated_risk'
+  else riskZone = 'danger_zone'
+
+  // Week-over-week spike analysis: compare last 7 days vs previous 7 days
+  let weekOverWeekChangePercent = 0
+  let weeklySpikeAlert = false
+
+  if (dailyLoads.length >= 14) {
+    const currentWeekSum = dailyLoads.slice(-7).reduce((a, b) => a + b, 0)
+    const prevWeekSum = dailyLoads.slice(-14, -7).reduce((a, b) => a + b, 0)
+
+    if (prevWeekSum > 0) {
+      weekOverWeekChangePercent = Math.round(((currentWeekSum - prevWeekSum) / prevWeekSum) * 100)
+      // Blanch & Gabbett (2016): >15% increase doubles injury risk
+      if (weekOverWeekChangePercent >= 15) {
+        weeklySpikeAlert = true
+      }
+    }
+  }
+
+  return {
+    ewmaAcute: Math.round(acuteEWMA),
+    ewmaChronic: Math.round(chronicEWMA),
+    uncoupledAcwr,
+    riskZone,
+    weekOverWeekChangePercent,
+    weeklySpikeAlert,
+  }
+}
+
+/**
  * Multi-day coupled ACWR calculator from an array of 28 daily loads
+ * Enhanced with uncoupled EWMA and week-over-week telemetry
  */
 export function calculateFromDailyLoads(dailyLoads28Days: number[]): ACWRResult {
   if (!dailyLoads28Days || dailyLoads28Days.length < 7) {
@@ -114,5 +233,15 @@ export function calculateFromDailyLoads(dailyLoads28Days: number[]): ACWRResult 
   const weeksCount = dailyLoads28Days.length / 7
   const chronicWeeklyAvg = Math.round(total28Sum / weeksCount)
 
-  return calculateACWR(acuteSum, chronicWeeklyAvg)
+  const baseResult = calculateACWR(acuteSum, chronicWeeklyAvg)
+  const ewmaResult = calculateEWMA_ACWR(dailyLoads28Days)
+
+  return {
+    ...baseResult,
+    ewmaAcute: ewmaResult.ewmaAcute,
+    ewmaChronic: ewmaResult.ewmaChronic,
+    uncoupledAcwr: ewmaResult.uncoupledAcwr,
+    weekOverWeekChangePercent: ewmaResult.weekOverWeekChangePercent,
+    weeklySpikeAlert: ewmaResult.weeklySpikeAlert,
+  }
 }

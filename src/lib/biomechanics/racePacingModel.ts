@@ -14,6 +14,8 @@ export interface RaceSplitLap {
   cleanSpeedMps: number
   turnContactSeconds?: number
   turnOut15mSeconds?: number
+  breakout15mTimeSeconds?: number
+  cleanSwim35mTimeSeconds?: number
 }
 
 export interface RacePacingPlan {
@@ -88,6 +90,8 @@ export function generateOlympicRacePacing(params: {
         strokeRateSpm: stroke === 'Freestyle' ? 48 : 44,
         dpsMeters: 2.05,
         cleanSpeedMps: parseFloat((50 / lap1Time).toFixed(2)),
+        breakout15mTimeSeconds: parseFloat((lap1Time * 0.28).toFixed(2)),
+        cleanSwim35mTimeSeconds: parseFloat((lap1Time * 0.72).toFixed(2)),
       })
       laps.push({
         lapNumber: 2,
@@ -98,6 +102,8 @@ export function generateOlympicRacePacing(params: {
         dpsMeters: 1.92,
         cleanSpeedMps: parseFloat((50 / lap2Time).toFixed(2)),
         turnContactSeconds: 0.28,
+        breakout15mTimeSeconds: parseFloat((lap2Time * 0.32).toFixed(2)),
+        cleanSwim35mTimeSeconds: parseFloat((lap2Time * 0.68).toFixed(2)),
       })
     } else {
       // 4 laps (SCY)
@@ -142,6 +148,8 @@ export function generateOlympicRacePacing(params: {
         dpsMeters: 1.95,
         cleanSpeedMps: parseFloat((50 / s).toFixed(2)),
         turnContactSeconds: idx > 0 ? 0.29 : undefined,
+        breakout15mTimeSeconds: parseFloat((s * (idx === 0 ? 0.28 : 0.32)).toFixed(2)),
+        cleanSwim35mTimeSeconds: parseFloat((s * (idx === 0 ? 0.72 : 0.68)).toFixed(2)),
       })
     })
   } else {

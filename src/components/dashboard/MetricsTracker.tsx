@@ -6,10 +6,11 @@ export const MetricsTracker: React.FC = () => {
   const [distance, setDistance] = useState<number>(50)
   const [timeSec, setTimeSec] = useState<number>(29.5)
   const [strokes, setStrokes] = useState<number>(31)
+  const [underwaterBreakout, setUnderwaterBreakout] = useState<number>(8) // Standard 8m breakout glide
   const [event, setEvent] = useState<'50m' | '100m' | '200m' | '400m'>('100m')
   const [targetTime, setTargetTime] = useState<number>(58.0)
 
-  const metrics = calculateStrokeMetrics(distance, timeSec, strokes)
+  const metrics = calculateStrokeMetrics(distance, timeSec, strokes, underwaterBreakout)
   const pacing = predictPacingCorridor(targetTime, event)
 
   return (
@@ -20,69 +21,94 @@ export const MetricsTracker: React.FC = () => {
           <div className="flex items-center gap-2">
             <Gauge className="w-5 h-5 text-white" />
             <h3 className="text-lg font-bold text-white tracking-tight">
-              Stroke Rate, Distance Per Stroke (DPS) & SWOLF
+              Stroke Kinematics, Clean DPS & Stroke Index (SI)
             </h3>
           </div>
           <p className="text-xs text-neutral-400 mt-0.5">
-            Physical decomposition of clean swimming velocity: v = SR × DPS and SWOLF efficiency index.
+            Olympic physical decomposition with underwater breakout subtraction, true surface DPS, and Costill Stroke Index ($SI = v \times DPS$).
           </p>
         </div>
 
-        {/* 4 Metric Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
-            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
-              Clean Velocity
+        {/* 6 Metric Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Velocity
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-              {metrics.velocityMps} <span className="text-sm font-normal text-neutral-400">m/s</span>
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+              {metrics.velocityMps} <span className="text-xs font-normal text-neutral-400">m/s</span>
             </div>
             <span className="text-[10px] text-neutral-500 font-mono block">
-              Pace: {metrics.pacePer100mSec}s / 100m
+              Pace: {metrics.pacePer100mSec}s/100m
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
-            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
               Stroke Rate (SR)
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
               {metrics.strokeRateSpm}{' '}
-              <span className="text-sm font-normal text-neutral-400">spm</span>
+              <span className="text-xs font-normal text-neutral-400">spm</span>
             </div>
             <span className="text-[10px] text-neutral-500 font-mono block">
-              Cadence: {(60 / (metrics.strokeRateSpm || 1)).toFixed(2)}s / cycle
+              Cadence: {(60 / (metrics.strokeRateSpm || 1)).toFixed(2)}s/cyc
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
-            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
-              Distance Per Stroke
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Clean DPS
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-              {metrics.distancePerStrokeMeters}{' '}
-              <span className="text-sm font-normal text-neutral-400">m</span>
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+              {metrics.cleanDpsMeters}{' '}
+              <span className="text-xs font-normal text-neutral-400">m</span>
             </div>
             <span className="text-[10px] text-neutral-500 font-mono block">
-              Distance per single arm pull
+              Raw: {metrics.distancePerStrokeMeters}m (minus {underwaterBreakout}m)
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black border border-white/10 space-y-1">
-            <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Stroke Index (SI)
+            </span>
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
+              {metrics.strokeIndexM2s}{' '}
+              <span className="text-xs font-normal text-neutral-400">m²/s</span>
+            </div>
+            <span className="text-[10px] text-neutral-500 font-mono block">
+              Aerobic Economy (Costill)
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+              Coordination (IdC)
+            </span>
+            <div className="text-base font-bold text-white font-mono uppercase mt-0.5">
+              {metrics.idcMode?.replace('_', ' ')}
+            </div>
+            <span className="text-[10px] text-neutral-400 font-mono block truncate" title={metrics.idcDescription}>
+              Chollet Model
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-black border border-white/10 space-y-1">
+            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
               SWOLF Score
             </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+            <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
               {metrics.swolf}
             </div>
-            <span className="text-[10px] font-mono text-neutral-300 block">
-              {metrics.efficiencyLabel}
+            <span className="text-[10px] font-mono text-neutral-300 block truncate">
+              {metrics.efficiencyRating.replace('_', ' ').toUpperCase()}
             </span>
           </div>
         </div>
 
         {/* Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/10 font-mono">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2 border-t border-white/10 font-mono">
           <div>
             <label className="text-xs text-neutral-400 block mb-1">Pool Distance (m):</label>
             <div className="flex gap-2">
@@ -131,6 +157,26 @@ export const MetricsTracker: React.FC = () => {
               onChange={(e) => setStrokes(Number(e.target.value))}
               className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
             />
+          </div>
+
+          <div>
+            <div className="flex justify-between text-xs text-neutral-400 mb-1">
+              <span>Breakout Glide (m):</span>
+              <span className="text-white font-bold">{underwaterBreakout}m</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="15"
+              step="1"
+              value={underwaterBreakout}
+              onChange={(e) => setUnderwaterBreakout(Number(e.target.value))}
+              className="w-full accent-white cursor-pointer h-2 bg-neutral-900 rounded-lg"
+            />
+            <div className="flex justify-between text-[9px] text-neutral-500">
+              <span>0m</span>
+              <span>15m (FINA limit)</span>
+            </div>
           </div>
         </div>
       </div>

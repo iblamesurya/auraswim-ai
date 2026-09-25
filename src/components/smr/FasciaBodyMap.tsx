@@ -63,6 +63,36 @@ export const TRIGGER_POINTS: FasciaTriggerPoint[] = [
       'A stiff upper back forces the delicate shoulder joint to compensate. Never roll the lower back; focus on gentle extensions between T1 and T12.',
   },
   {
+    id: 'tp-latissimus',
+    name: 'Latissimus Dorsi & Teres Major',
+    locationLabel: 'Lateral Scapula & High Ribcage Flank',
+    protocolId: 'latissimus-dorsi',
+    view: 'posterior',
+    x: 65,
+    y: 38,
+    symptomInWater:
+      'Inability to reach streamline without arching lower back; internal rotation tightness that forces the elbow to drop during the pull.',
+    palpationTest:
+      'Lie side-down over foam roller right below the armpit. Intense tenderness indicates shortened, overworked lat fascia.',
+    denizHekmatiAdvice:
+      'The primary pulling engine in swimming. Releasing this flank releases rotational drag and restores smooth body roll.',
+  },
+  {
+    id: 'tp-serratus',
+    name: 'Serratus Anterior',
+    locationLabel: 'Anterior-Lateral Rib Cage (Bra-Line)',
+    protocolId: 'serratus-anterior',
+    view: 'anterior',
+    x: 33,
+    y: 40,
+    symptomInWater:
+      'Inhibited upward rotation of shoulder blade; impingement pinch right at the instant of hand entry into water.',
+    palpationTest:
+      'Press gently with fingers into the side ribcage between ribs. Tender, tight points restrict rib expansion.',
+    denizHekmatiAdvice:
+      'The key muscle for upward scapular clearance. When released, your shoulder blade glides smoothly without trapping the rotator cuff.',
+  },
+  {
     id: 'tp-plantar',
     name: 'Plantar Fascia',
     locationLabel: 'Sole of the Foot / Medial Arch',

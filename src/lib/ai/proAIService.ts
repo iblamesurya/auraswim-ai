@@ -73,15 +73,22 @@ Rules:
 - When discussing shoulder issues, highlight SMR protocols with lacrosse balls and scapular kinematics.
 - Keep advice actionable, encouraging, and elite.`
 
+export interface SwimmerContextTelemetry {
+  swimmerName?: string
+  acwr?: number
+  smrStreak?: number
+  recentYardage?: number
+  shoulderPain?: number
+  latestEvfAngle?: number
+  latestStreamlineAngle?: number
+  hasLumbarCheat?: boolean
+  latestIdcMode?: string
+  latestStrokeIndex?: number
+}
+
 export async function queryLiveSwimmingAI(
   userQuery: string,
-  swimmerContext?: {
-    swimmerName?: string
-    acwr?: number
-    smrStreak?: number
-    recentYardage?: number
-    shoulderPain?: number
-  }
+  swimmerContext?: SwimmerContextTelemetry
 ): Promise<{ text: string; modelUsed: string }> {
   const apiKey = getStoredApiKey()
   const model = getStoredModel()
@@ -92,11 +99,16 @@ export async function queryLiveSwimmingAI(
 
   let contextPrompt = ''
   if (swimmerContext) {
-    contextPrompt = `\n[ATHLETE CURRENT TELEMETRY:
-- Swimmer: ${swimmerContext.swimmerName || 'Competitive Swimmer'}
+    contextPrompt = `\n[ATHLETE REAL-TIME BIOMECHANICAL TELEMETRY:
+- Athlete: ${swimmerContext.swimmerName || 'Competitive Swimmer'}
 - Acute:Chronic Workload Ratio (ACWR): ${swimmerContext.acwr ? swimmerContext.acwr.toFixed(2) : 'Awaiting baseline'}
-- SMR Streak: ${swimmerContext.smrStreak || 0} days
-- Shoulder Pain Score: ${swimmerContext.shoulderPain ?? 'None logged'}/10]\n`
+- SMR Recovery Streak: ${swimmerContext.smrStreak || 0} days
+- Shoulder Pain Score (VAS 0-10): ${swimmerContext.shoulderPain ?? 'None logged'}/10
+${swimmerContext.latestEvfAngle ? `- Last Measured EVF Catch Angle: ${swimmerContext.latestEvfAngle}°` : ''}
+${swimmerContext.latestStreamlineAngle ? `- Last Measured Overhead Streamline: ${swimmerContext.latestStreamlineAngle}°` : ''}
+${swimmerContext.hasLumbarCheat ? `- Lumbar Hyperextension / Anterior Pelvic Tilt Detected: YES (+28% passive drag penalty)` : ''}
+${swimmerContext.latestIdcMode ? `- Index of Coordination (IdC): ${swimmerContext.latestIdcMode.toUpperCase()}` : ''}
+${swimmerContext.latestStrokeIndex ? `- Stroke Index (SI): ${swimmerContext.latestStrokeIndex} m²/s` : ''}]\n`
   }
 
   const selectedModelMeta = DEFAULT_MODELS.find((m) => m.id === model) || DEFAULT_MODELS[0]

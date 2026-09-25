@@ -3,6 +3,8 @@ import {
   calculateACWR,
   calculateSessionRPE,
   calculateFromDailyLoads,
+  calculateEWMA_ACWR,
+  calculateMechanicalStrain,
 } from '../lib/biomechanics/acwrModel'
 
 describe('acwrModel', () => {
@@ -45,5 +47,24 @@ describe('acwrModel', () => {
 
     const emptyDaily = calculateFromDailyLoads([])
     expect(emptyDaily.acwr).toBe(0)
+  })
+
+  it('calculates uncoupled EWMA and flags weekly volume spikes >15%', () => {
+    // 7 days of 1000, followed by 7 days of 1300 (+30% increase)
+    const dailyLoads = [
+      1000, 1000, 1000, 1000, 1000, 1000, 1000, // Week 1 (prev)
+      1300, 1300, 1300, 1300, 1300, 1300, 1300, // Week 2 (acute spike)
+    ]
+    const ewma = calculateEWMA_ACWR(dailyLoads)
+    expect(ewma.ewmaAcute).toBeGreaterThan(1150)
+    expect(ewma.weekOverWeekChangePercent).toBe(30)
+    expect(ewma.weeklySpikeAlert).toBe(true)
+  })
+
+  it('calculates stroke and equipment mechanical strain multipliers', () => {
+    const freeLoad = calculateMechanicalStrain({ volumeMeters: 1000, rpe1to10: 7, stroke: 'freestyle' })
+    const flyPaddleLoad = calculateMechanicalStrain({ volumeMeters: 1000, rpe1to10: 7, stroke: 'butterfly', equipment: 'paddles' })
+    // Fly (1.6) x Paddles (1.35) = 2.16x higher joint torque
+    expect(flyPaddleLoad).toBeGreaterThan(freeLoad * 2.0)
   })
 })
