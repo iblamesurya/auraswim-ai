@@ -1,16 +1,17 @@
 import React, { useState } from 'react'
-import { PRESET_QUERIES } from '../../lib/data/swimKnowledgebase'
+import { PRESET_QUERIES, searchSwimKnowledgebase } from '../../lib/data/swimKnowledgebase'
 import type { KnowledgebaseQuery } from '../../lib/data/swimKnowledgebase'
-import { Sparkles, Send, BookOpen, User, Bot } from 'lucide-react'
+import { Sparkles, Send, BookOpen, User, Bot, Filter } from 'lucide-react'
 
 export const AICoachChat: React.FC = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedQuery, setSelectedQuery] = useState<KnowledgebaseQuery>(PRESET_QUERIES[0])
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant'; text: string; sources?: string[] }>>([
     {
       role: 'assistant',
       text: `Hello! I am your **AuraSwim AI Intelligence Assistant**, trained on competitive swimming biomechanics, Coach Deniz Hekmati's self-myofascial release (SMR) protocols, and 100 peer-reviewed swimming research studies.
 
-Ask me anything about your sister's shoulder tightness, stroke rate vs. DPS, training load spikes (ACWR), or pre-meet warm-up routines!`,
+Ask me anything about your sister's shoulder tightness, stroke rate vs. DPS, training load spikes (ACWR), pre-meet warm-up routines, or tap any of the 12 diagnostic scenarios below!`,
     },
   ])
   const [inputQuery, setInputQuery] = useState('')
@@ -31,43 +32,22 @@ Ask me anything about your sister's shoulder tightness, stroke rate vs. DPS, tra
     const userText = inputQuery.trim()
     setInputQuery('')
 
-    // Search existing query knowledgebase or generate smart response
-    const matched = PRESET_QUERIES.find(
-      (q) =>
-        userText.toLowerCase().includes(q.category) ||
-        userText.toLowerCase().includes('shoulder') ||
-        userText.toLowerCase().includes('stroke') ||
-        userText.toLowerCase().includes('acwr') ||
-        userText.toLowerCase().includes('warmup') ||
-        userText.toLowerCase().includes('kick')
-    )
-
-    let reply = ''
-    let sources: string[] = []
-
-    if (matched) {
-      reply = matched.fullResponse
-      sources = matched.sources
-    } else {
-      reply = `### AI Swimmer Analysis:
-Based on sports science guidelines:
-1. **Target Soft-Tissue Release:** Ensure she performs 60 seconds of Pec Minor release with a lacrosse ball and Subscapularis palpation before workout entry.
-2. **Kinematic Anchor:** Keep the catch elbow high ($100^\circ - 125^\circ$) so the forearm acts as a large paddle surface without overloading the supraspinatus tendon.
-3. **Training Load Rule:** Keep the Acute:Chronic Workload Ratio (ACWR) between **0.80 and 1.30** to prevent overuse spikes.
-
-*(Tip: You can also select the quick preset chips above for detailed diagnostic breakdowns!)*`
-      sources = [
-        'Deniz Hekmati: SMR & Shoulder Pain in Swimmers',
-        'MDPI Sports Science (2026): Mechanistically Interpretable Models in Swimming',
-      ]
+    const result = searchSwimKnowledgebase(userText)
+    if (result.matchedPreset) {
+      setSelectedQuery(result.matchedPreset)
     }
 
     setChatHistory((prev) => [
       ...prev,
       { role: 'user', text: userText },
-      { role: 'assistant', text: reply, sources },
+      { role: 'assistant', text: result.reply, sources: result.sources },
     ])
   }
+
+  const filteredQueries =
+    selectedCategory === 'all'
+      ? PRESET_QUERIES
+      : PRESET_QUERIES.filter((q) => q.category === selectedCategory)
 
   return (
     <div className="space-y-6">
@@ -98,13 +78,38 @@ Based on sports science guidelines:
         </div>
       </div>
 
-      {/* Preset Query Chips */}
-      <div className="space-y-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-          Explore Ready-to-Try Query Scenarios:
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {PRESET_QUERIES.map((q) => (
+      {/* Preset Query Filter & Chips */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-cyan-400" />
+            12 Ready-to-Try Query Scenarios:
+          </span>
+          <div className="flex flex-wrap items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            {[
+              { id: 'all', label: 'All (12)' },
+              { id: 'biomechanics', label: 'Biomechanics' },
+              { id: 'injury_prevention', label: 'Injury & SMR' },
+              { id: 'training_load', label: 'ACWR Load' },
+              { id: 'meet_prep', label: 'Meet Prep' },
+            ].map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  selectedCategory === cat.id
+                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+          {filteredQueries.map((q) => (
             <button
               key={q.id}
               onClick={() => handleSelectPreset(q)}
@@ -115,7 +120,7 @@ Based on sports science guidelines:
                   {q.title}
                 </span>
                 <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                  {q.category}
+                  {q.category.replace('_', ' ')}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 line-clamp-2">{q.previewText}</p>

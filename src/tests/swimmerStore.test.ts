@@ -61,4 +61,34 @@ describe('swimmerStore', () => {
     expect(parsed.swimmerName).toBe('Competitive Swimmer')
     expect(Array.isArray(parsed.workouts)).toBe(true)
   })
+
+  it('records camera mobility tests and persists history', async () => {
+    const { addMobilityLog } = await import('../lib/storage/swimmerStore')
+    const updated = addMobilityLog({
+      date: '2026-09-25',
+      type: 'streamline',
+      measuredValue: 176,
+      status: 'optimal',
+      passed: true,
+      notes: 'Thoracic reach fully cleared',
+    })
+
+    expect(updated.mobilityLogs[0].measuredValue).toBe(176)
+    expect(updated.mobilityLogs[0].passed).toBe(true)
+  })
+
+  it('toggles weekly schedule day completion status', async () => {
+    const { toggleScheduleDay } = await import('../lib/storage/swimmerStore')
+    const updated = toggleScheduleDay('Wed')
+    const wedDay = updated.weeklySchedule.find((d) => d.day === 'Wed')
+    expect(wedDay?.completed).toBe(true)
+  })
+
+  it('generates a readable text summary report for coaches', async () => {
+    const { generateCoachTextSummary } = await import('../lib/storage/swimmerStore')
+    const summary = generateCoachTextSummary()
+    expect(summary).toContain('AURASWIM AI • ATHLETE COACH REPORT')
+    expect(summary).toContain('Swimmer Name:')
+    expect(summary).toContain('SMR Completion Streak:')
+  })
 })
